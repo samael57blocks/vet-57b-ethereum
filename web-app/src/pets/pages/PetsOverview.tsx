@@ -6,7 +6,10 @@ import { PetsOverviewView } from "../views/PetsOverviewView";
  * Handles data fetching and passes pets data to the view
  */
 export function PetsOverviewPage() {
-    const { pets } = usePetsOverview();
+    const { pets, loading, error } = usePetsOverview();
+
+    if (loading) return <div className="main-content"><p>Loading pets...</p></div>;
+    if (error) return <div className="main-content"><p>Error: {error}</p></div>;
 
     return <PetsOverviewView pets={pets} />;
 }
