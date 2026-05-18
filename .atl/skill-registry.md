@@ -90,5 +90,24 @@ Pre-digested rules per skill. Delegators copy matching blocks into sub-agent pro
 
 | File | Path | Notes |
 |------|------|-------|
-| AGENTS.md | /home/jesus/57Blocks/Courses/BlockChain/Ethereum/Dapp/vet-57b/AGENTS.md | Stack, rules, and conventions for the project |
-| README.md | /home/jesus/57Blocks/Courses/BlockChain/Ethereum/Dapp/vet-57b/README.md | Project overview and exercise goals |
+| AGENTS.md | /home/jesus/57Blocks/Courses/BlockChain/Ethereum/Dapp/vet-57b/AGENTS.md | Stack, rules, and conventions for the project. ⚠️ Stale: prescribes ethers.js v6 but actual code uses wagmi 3 + viem 2. |
+| README.md | /home/jesus/57Blocks/Courses/BlockChain/Ethereum/Dapp/vet-57b/README.md | Project overview and exercise goals. Stale: still describes Solana stack. |
+
+## Project Stack (detected 2026-05-18)
+
+| Layer | Technology |
+|-------|-----------|
+| Smart Contracts | Solidity 0.8.28, Hardhat 2.22, @nomicfoundation/hardhat-toolbox 5 |
+| Frontend | React 19, Vite 7, TypeScript 5.9 strict |
+| Blockchain SDK | wagmi 3.6 + viem 2.48 |
+| State Mgmt | TanStack Query 5 |
+| Routing | react-router-dom 7 |
+| HTTP | axios 1.13 |
+| Linting | ESLint 9 + typescript-eslint + react-hooks plugin |
+| Contract Tests | Hardhat (Mocha + Chai), TypeChain types |
+| Frontend Tests | ❌ None configured |
+
+## Strict TDD
+
+- **Status**: disabled
+- **Reason**: No test runner found in web-app/ (the primary development surface). Hardhat contract tests exist but frontend lacks any test framework. Install vitest + @testing-library/react to enable.
