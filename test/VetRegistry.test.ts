@@ -138,4 +138,59 @@ describe("VetRegistry", () => {
       ).to.be.revertedWith("Appointment value must be greater than 0");
     });
   });
+
+  describe("Appointment View Functions", () => {
+    const VIEW_APPOINTMENT = {
+      date: 1715338800, // Unix timestamp
+      time: "10:30",
+      appointmentValue: 5000, // dollar cents
+    };
+
+    beforeEach(async () => {
+      // Register two pets for view function tests
+      await registry.registerPet(PET_1.name, PET_1.age, PET_1.animalType, PET_1.caretakerName, PET_1.caretakerPhone);
+      await registry.registerPet(PET_2.name, PET_2.age, PET_2.animalType, PET_2.caretakerName, PET_2.caretakerPhone);
+    });
+
+    it("should return appointment by id", async () => {
+      await registry.scheduleAppointment(1, VIEW_APPOINTMENT.date, VIEW_APPOINTMENT.time, VIEW_APPOINTMENT.appointmentValue);
+
+      const appointment = await registry.getAppointment(1);
+      expect(appointment.petId).to.equal(1);
+      expect(appointment.date).to.equal(VIEW_APPOINTMENT.date);
+      expect(appointment.time).to.equal(VIEW_APPOINTMENT.time);
+      expect(appointment.appointmentValue).to.equal(VIEW_APPOINTMENT.appointmentValue);
+      expect(appointment.paidValue).to.equal(0);
+    });
+
+    it("should revert when appointment does not exist", async () => {
+      await expect(registry.getAppointment(999)).to.be.revertedWith("Appointment does not exist");
+    });
+
+    it("should return empty array for pet with no appointments", async () => {
+      const ids = await registry.getPetAppointments(1);
+      expect(ids.length).to.equal(0);
+    });
+
+    it("should return appointments for a specific pet", async () => {
+      await registry.scheduleAppointment(1, VIEW_APPOINTMENT.date, VIEW_APPOINTMENT.time, VIEW_APPOINTMENT.appointmentValue);
+      await registry.scheduleAppointment(1, VIEW_APPOINTMENT.date, VIEW_APPOINTMENT.time, VIEW_APPOINTMENT.appointmentValue);
+      await registry.scheduleAppointment(2, VIEW_APPOINTMENT.date, VIEW_APPOINTMENT.time, VIEW_APPOINTMENT.appointmentValue);
+
+      const ids = await registry.getPetAppointments(1);
+      expect(ids.length).to.equal(2);
+      expect(ids[0]).to.equal(1);
+      expect(ids[1]).to.equal(2);
+    });
+
+    it("should return total appointment count", async () => {
+      expect(await registry.getAppointmentCount()).to.equal(0);
+
+      await registry.scheduleAppointment(1, VIEW_APPOINTMENT.date, VIEW_APPOINTMENT.time, VIEW_APPOINTMENT.appointmentValue);
+      expect(await registry.getAppointmentCount()).to.equal(1);
+
+      await registry.scheduleAppointment(2, VIEW_APPOINTMENT.date, VIEW_APPOINTMENT.time, VIEW_APPOINTMENT.appointmentValue);
+      expect(await registry.getAppointmentCount()).to.equal(2);
+    });
+  });
 });

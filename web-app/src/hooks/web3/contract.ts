@@ -83,4 +83,37 @@ export const vetRegistryABI = [
     outputs: [{ name: "id", type: "uint256" }],
     stateMutability: "nonpayable",
   },
+  {
+    type: "function",
+    name: "getAppointment",
+    inputs: [{ name: "id", type: "uint256" }],
+    outputs: [
+      {
+        name: "",
+        type: "tuple",
+        components: [
+          { name: "petId", type: "uint256" },
+          { name: "date", type: "uint256" },
+          { name: "time", type: "string" },
+          { name: "appointmentValue", type: "uint256" },
+          { name: "paidValue", type: "uint256" },
+        ],
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getPetAppointments",
+    inputs: [{ name: "petId", type: "uint256" }],
+    outputs: [{ name: "", type: "uint256[]" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getAppointmentCount",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
 ] as const;
