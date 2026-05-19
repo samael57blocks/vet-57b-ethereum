@@ -21,6 +21,7 @@ export const usePetsOverview = () => {
   const { data: pets = [], isLoading: loading, error } = useQuery<Pet[], Error>({
     queryKey: PET_QUERY_KEY,
     queryFn: PetService.getPets,
+    staleTime: 30_000, // 30s — avoid refetch on mount when navigating between pages
   });
 
   // Normalize Error | null to string | null for backward compat
