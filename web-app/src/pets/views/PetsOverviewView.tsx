@@ -13,6 +13,8 @@ import { PET_QUERY_KEY } from "../hooks/usePetsOverview";
 interface PetsOverviewViewProps {
     /** List of pets to display */
     pets: Pet[];
+    /** Whether pets are still loading (show inline indicator, don't block UI) */
+    loading?: boolean;
 }
 
 /**
@@ -49,7 +51,7 @@ const ANIMAL_TYPE_RAW: Record<AnimalType, AnimalTypeRaw> = {
  * Handles wallet connection guard, form validation,
  * transaction lifecycle feedback, and auto-refresh on success.
  */
-export function PetsOverviewView({ pets }: PetsOverviewViewProps) {
+export function PetsOverviewView({ pets, loading }: PetsOverviewViewProps) {
     const { isConnected } = useAccount();
     const { registerPet, txState } = useRegisterPet();
     const queryClient = useQueryClient();
@@ -284,7 +286,9 @@ export function PetsOverviewView({ pets }: PetsOverviewViewProps) {
                 )}
             </div>
 
-            {pets.length === 0 ? (
+            {loading ? (
+                <p>Loading pets...</p>
+            ) : pets.length === 0 ? (
                 <div className="empty-state">
                     <div className="empty-state-icon">🐾</div>
                     <p className="empty-state-text">No pets registered yet</p>

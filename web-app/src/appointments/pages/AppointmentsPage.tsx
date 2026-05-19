@@ -16,7 +16,6 @@ export function AppointmentsPage() {
     const { data: appointments, isLoading: appsLoading, error: appsError } =
         useAppointments(selectedPetId);
 
-    if (petsLoading) return <div className="main-content"><p>Loading pets...</p></div>;
     if (petsError) return <div className="main-content"><p>Error: {petsError}</p></div>;
 
     return (
