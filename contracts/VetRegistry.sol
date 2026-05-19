@@ -154,4 +154,47 @@ contract VetRegistry {
 
         return newId;
     }
+
+    /**
+     * @notice Get a medical appointment by ID
+     * @param id The appointment's unique identifier
+     * @return MedicalAppointment The appointment details
+     */
+    function getAppointment(uint256 id) external view returns (MedicalAppointment memory) {
+        require(id > 0 && id <= _appointmentCount, "Appointment does not exist");
+        return _appointments[id];
+    }
+
+    /**
+     * @notice Get all appointment IDs for a specific pet
+     * @param petId The pet's unique identifier
+     * @return uint256[] Array of appointment IDs belonging to the pet
+     */
+    function getPetAppointments(uint256 petId) external view returns (uint256[] memory) {
+        // Count how many appointments match this petId
+        uint256 count;
+        for (uint256 i = 1; i <= _appointmentCount; i++) {
+            if (_appointments[i].petId == petId) {
+                count++;
+            }
+        }
+        // Build the result array
+        uint256[] memory result = new uint256[](count);
+        uint256 index;
+        for (uint256 i = 1; i <= _appointmentCount; i++) {
+            if (_appointments[i].petId == petId) {
+                result[index] = i;
+                index++;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * @notice Get total number of scheduled appointments
+     * @return uint256 Total appointment count
+     */
+    function getAppointmentCount() external view returns (uint256) {
+        return _appointmentCount;
+    }
 }

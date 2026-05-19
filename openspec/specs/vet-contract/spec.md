@@ -46,3 +46,45 @@ The system MUST track the total count of pets and appointments to enable client-
 
 - WHEN calling `getPetCount()`
 - THEN the total number of registered pets is returned
+
+### Requirement: Appointment Query
+
+The system MUST allow reading an appointment by its ID, returning the full MedicalAppointment struct.
+
+#### Scenario: Query existing appointment
+
+- GIVEN an appointment with ID `0x1` exists
+- WHEN calling `getAppointment(0x1)`
+- THEN the appointment's petId, date, time, appointmentValue, and paidValue are returned
+
+#### Scenario: Query non-existent appointment reverts
+
+- GIVEN no appointment with ID `0x99` exists
+- WHEN calling `getAppointment(0x99)`
+- THEN the call reverts
+
+### Requirement: Pet Appointments Query
+
+The system MUST allow listing all appointment IDs for a given pet.
+
+#### Scenario: List appointments for a pet
+
+- GIVEN a pet with ID `0x1` has 2 appointments
+- WHEN calling `getPetAppointments(0x1)`
+- THEN an array of 2 appointment IDs is returned
+
+#### Scenario: No appointments returns empty
+
+- GIVEN a pet with ID `0x1` has no appointments
+- WHEN calling `getPetAppointments(0x1)`
+- THEN an empty array is returned
+
+### Requirement: Appointment Count Tracking
+
+The system MUST expose the total count of all appointments.
+
+#### Scenario: Query appointment count
+
+- GIVEN 3 appointments exist
+- WHEN calling `getAppointmentCount()`
+- THEN the total count returned is 3

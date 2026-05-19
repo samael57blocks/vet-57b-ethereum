@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/home/jesus/57Blocks/Courses/BlockChain/Ethereum/Dapp/vet-57b/contracts/VetRegistry.sol": {
-      "lastModificationDate": 1778516648216,
-      "contentHash": "73b6e03d4111e26b79ae09243688f3f2",
+      "lastModificationDate": 1779156302343,
+      "contentHash": "05c470f7861e1ec5e65c81ab10544cc8",
       "sourceName": "contracts/VetRegistry.sol",
       "solcConfig": {
         "version": "0.8.28",

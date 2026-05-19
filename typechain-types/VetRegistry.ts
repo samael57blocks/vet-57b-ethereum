@@ -23,6 +23,28 @@ import type {
 } from "./common";
 
 export declare namespace VetRegistry {
+  export type MedicalAppointmentStruct = {
+    petId: BigNumberish;
+    date: BigNumberish;
+    time: string;
+    appointmentValue: BigNumberish;
+    paidValue: BigNumberish;
+  };
+
+  export type MedicalAppointmentStructOutput = [
+    petId: bigint,
+    date: bigint,
+    time: string,
+    appointmentValue: bigint,
+    paidValue: bigint
+  ] & {
+    petId: bigint;
+    date: bigint;
+    time: string;
+    appointmentValue: bigint;
+    paidValue: bigint;
+  };
+
   export type MedicalRecordStruct = {
     name: string;
     age: BigNumberish;
@@ -49,7 +71,10 @@ export declare namespace VetRegistry {
 export interface VetRegistryInterface extends Interface {
   getFunction(
     nameOrSignature:
+      | "getAppointment"
+      | "getAppointmentCount"
       | "getMedicalRecord"
+      | "getPetAppointments"
       | "getPetCount"
       | "registerPet"
       | "scheduleAppointment"
@@ -60,7 +85,19 @@ export interface VetRegistryInterface extends Interface {
   ): EventFragment;
 
   encodeFunctionData(
+    functionFragment: "getAppointment",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getAppointmentCount",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "getMedicalRecord",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getPetAppointments",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
@@ -77,7 +114,19 @@ export interface VetRegistryInterface extends Interface {
   ): string;
 
   decodeFunctionResult(
+    functionFragment: "getAppointment",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getAppointmentCount",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "getMedicalRecord",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getPetAppointments",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -196,9 +245,23 @@ export interface VetRegistry extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  getAppointment: TypedContractMethod<
+    [id: BigNumberish],
+    [VetRegistry.MedicalAppointmentStructOutput],
+    "view"
+  >;
+
+  getAppointmentCount: TypedContractMethod<[], [bigint], "view">;
+
   getMedicalRecord: TypedContractMethod<
     [id: BigNumberish],
     [VetRegistry.MedicalRecordStructOutput],
+    "view"
+  >;
+
+  getPetAppointments: TypedContractMethod<
+    [petId: BigNumberish],
+    [bigint[]],
     "view"
   >;
 
@@ -232,12 +295,25 @@ export interface VetRegistry extends BaseContract {
   ): T;
 
   getFunction(
+    nameOrSignature: "getAppointment"
+  ): TypedContractMethod<
+    [id: BigNumberish],
+    [VetRegistry.MedicalAppointmentStructOutput],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "getAppointmentCount"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
     nameOrSignature: "getMedicalRecord"
   ): TypedContractMethod<
     [id: BigNumberish],
     [VetRegistry.MedicalRecordStructOutput],
     "view"
   >;
+  getFunction(
+    nameOrSignature: "getPetAppointments"
+  ): TypedContractMethod<[petId: BigNumberish], [bigint[]], "view">;
   getFunction(
     nameOrSignature: "getPetCount"
   ): TypedContractMethod<[], [bigint], "view">;
