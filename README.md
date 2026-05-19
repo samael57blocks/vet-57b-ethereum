@@ -1,90 +1,90 @@
-# Vet 57B — dApp de Veterinaria (Ethereum)
+# Vet 57B — Veterinary dApp (Ethereum)
 
-Aplicación descentralizada para la gestión de una clínica veterinaria. Permite registrar mascotas, agendar citas y pagarlas con USDC.
+A decentralized application for managing a veterinary clinic. Register pets, schedule appointments, and pay them with USDC.
 
 ## Stack
 
-| Capa | Tecnología |
-|------|------------|
+| Layer | Technology |
+|-------|------------|
 | Smart Contracts | Solidity 0.8.28, Hardhat 2.22 |
 | Frontend | React 19, Vite 7, TypeScript 5.9 |
 | Blockchain SDK | wagmi 3.6 + viem 2.48 |
-| Estado | TanStack Query 5 |
+| State Management | TanStack Query 5 |
 | Routing | react-router-dom 7 |
-| Tests (contratos) | Hardhat (Mocha + Chai) |
-| Tests (frontend) | Vitest + @testing-library/react |
-| Estilos | Tailwind CSS |
+| Contract Tests | Hardhat (Mocha + Chai) |
+| Frontend Tests | Vitest + @testing-library/react |
+| Styling | Tailwind CSS |
 
-## Estructura del proyecto
+## Project Structure
 
 ```
 vet-57b/
 ├── contracts/              # Smart Contracts (Solidity)
-│   ├── VetRegistry.sol     # Registro de mascotas, citas y pagos
-│   └── test/               # Mocks para testing
+│   ├── VetRegistry.sol     # Pet registry, appointments & payments
+│   └── test/               # Test mocks
 │       └── MockERC20.sol
-├── test/                   # Tests de Hardhat (Mocha + Chai)
+├── test/                   # Hardhat tests (Mocha + Chai)
 ├── web-app/                # Frontend (React + Vite)
 │   └── src/
-│       ├── pets/           # Módulo de mascotas
-│       ├── appointments/   # Módulo de citas y pagos
-│       ├── hooks/web3/     # Hooks de wagmi + viem
-│       └── common/         # Componentes compartidos
-├── scripts/                # Scripts de deploy
-└── openspec/               # Especificaciones SDD
+│       ├── pets/           # Pets module
+│       ├── appointments/   # Appointments & payment module
+│       ├── hooks/web3/     # wagmi + viem hooks
+│       └── common/         # Shared components
+├── scripts/                # Deployment scripts
+└── openspec/               # SDD specifications
 ```
 
-## Requisitos
+## Prerequisites
 
 - Node.js 18+
 - npm
-- MetaMask u otro wallet compatible
+- MetaMask or compatible wallet
 
-## Inicio rápido
+## Quick Start
 
 ```bash
-# 1. Iniciar nodo Hardhat local
+# 1. Start local Hardhat node
 npx hardhat node
 
-# 2. En otra terminal, hacer deploy
+# 2. In another terminal, deploy contracts
 npx hardhat run scripts/deploy.ts --network localhost
 
-# 3. Configurar variables de entorno
+# 3. Configure environment
 cp web-app/.env.example web-app/.env
-# Editar VITE_CONTRACT_ADDRESS con la dirección del deploy
-# Editar VITE_USDC_ADDRESS con la dirección del mock USDC
+# Set VITE_CONTRACT_ADDRESS to the deployed contract address
+# Set VITE_USDC_ADDRESS to the mock USDC address
 
-# 4. Iniciar frontend
+# 4. Start the frontend
 cd web-app
 npm install
 npm run dev
 ```
 
-### Script todo-en-uno
+### One-command script
 
 ```bash
 ./dev.sh
 ```
 
-Arranca el nodo Hardhat, hace deploy y lanza la app.
+Starts Hardhat node, deploys contracts, and launches the app.
 
 ## Tests
 
 ```bash
-# Tests de contratos (Hardhat)
+# Contract tests (Hardhat)
 npx hardhat test
 
-# Tests de frontend (Vitest)
+# Frontend tests (Vitest)
 cd web-app && npx vitest run
 ```
 
 ## Features
 
-- **Registro de mascotas**: name, age, tipo (Dog/Cat), datos del dueño
-- **Agendar citas**: fecha, hora, valor en dólares
-- **Pagar citas con USDC**: approve + pay flow (CEI pattern)
-- **Retiro de fondos**: solo el owner del contrato puede retirar USDC acumulado
+- **Pet registration**: name, age, type (Dog/Cat), caretaker info
+- **Schedule appointments**: date, time, dollar amount
+- **Pay with USDC**: approve + pay flow following the CEI pattern
+- **Withdraw funds**: only the contract owner can withdraw accumulated USDC
 
-## Ejercicio original
+## Original Exercise
 
-Este proyecto comenzó como un ejercicio de desarrollo en **Solana con Anchor**, pero fue migrado a **Ethereum con Hardhat** para explorar el stack EVM. El directorio `solana/` contiene el código original de la versión Solana.
+This project started as a **Solana + Anchor** development exercise and was later migrated to **Ethereum + Hardhat** to explore the EVM stack. The `solana/` directory contains the original Solana codebase.
