@@ -2,6 +2,17 @@
 pragma solidity ^0.8.28;
 
 /**
+ * @title IERC20
+ * @notice Minimal ERC20 interface for USDC payments
+ */
+interface IERC20 {
+    function transferFrom(address from, address to, uint256 amount) external returns (bool);
+    function transfer(address to, uint256 amount) external returns (bool);
+    function balanceOf(address account) external view returns (uint256);
+    function decimals() external view returns (uint8);
+}
+
+/**
  * @title VetRegistry
  * @notice Veterinary clinic registry for managing pet medical records and appointments
  */
@@ -45,6 +56,13 @@ contract VetRegistry {
         uint256 appointmentValue
     );
 
+    event AppointmentPaidToken(
+        uint256 indexed appointmentId,
+        address indexed payer,
+        address token,
+        uint256 amount
+    );
+
     // ==================== State ====================
 
     uint256 private _petCount;
@@ -52,6 +70,17 @@ contract VetRegistry {
 
     mapping(uint256 => MedicalRecord) private _medicalRecords;
     mapping(uint256 => MedicalAppointment) private _appointments;
+
+    address public owner;
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Ownable: caller is not the owner");
+        _;
+    }
+
+    constructor() {
+        owner = msg.sender;
+    }
 
     // ==================== Public Functions ====================
 
@@ -196,5 +225,54 @@ contract VetRegistry {
      */
     function getAppointmentCount() external view returns (uint256) {
         return _appointmentCount;
+    }
+
+    // ==================== Payment Functions ====================
+
+    /**
+     * @notice Convert cents (2 decimal places) to token units accounting for token decimals
+     * @param cents Amount in cents
+     * @param d Token decimals
+     * @return uint256 Amount in token units
+     */
+    function _centsToTokenUnits(uint256 cents, uint8 d) internal pure returns (uint256) {
+        require(d > 2, "Token decimals must be > 2");
+        return cents * 10 ** (d - 2);
+    }
+
+    /**
+     * @notice Pay an appointment using an ERC20 token (e.g. USDC)
+     * @param id Appointment ID
+     * @param token ERC20 token address
+     */
+    function payAppointmentToken(uint256 id, address token) external {
+        require(id > 0 && id <= _appointmentCount, "Appointment does not exist");
+        require(_appointments[id].paidValue == 0, "Already paid");
+
+        uint256 amount = _centsToTokenUnits(_appointments[id].appointmentValue, IERC20(token).decimals());
+
+        // CEI: update state BEFORE external call
+        _appointments[id].paidValue = _appointments[id].appointmentValue;
+
+        require(IERC20(token).transferFrom(msg.sender, address(this), amount), "Transfer failed");
+
+        emit AppointmentPaidToken(id, msg.sender, token, amount);
+    }
+
+    /**
+     * @notice Withdraw all tokens from the contract (owner only)
+     * @param token ERC20 token address
+     */
+    function withdrawToken(address token) external onlyOwner {
+        uint256 bal = IERC20(token).balanceOf(address(this));
+        require(bal > 0, "No tokens");
+        require(IERC20(token).transfer(owner, bal), "Transfer failed");
+    }
+
+    /**
+     * @notice Reject direct ETH transfers
+     */
+    receive() external payable {
+        revert("ETH not supported");
     }
 }

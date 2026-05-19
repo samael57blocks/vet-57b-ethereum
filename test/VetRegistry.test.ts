@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { VetRegistry, VetRegistry__factory } from "../typechain-types";
+import { VetRegistry, VetRegistry__factory, MockERC20, MockERC20__factory } from "../typechain-types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 describe("VetRegistry", () => {
@@ -191,6 +191,127 @@ describe("VetRegistry", () => {
 
       await registry.scheduleAppointment(2, VIEW_APPOINTMENT.date, VIEW_APPOINTMENT.time, VIEW_APPOINTMENT.appointmentValue);
       expect(await registry.getAppointmentCount()).to.equal(2);
+    });
+  });
+
+  describe("Payment", () => {
+    let usdc: MockERC20;
+    let payer: SignerWithAddress;
+
+    const PAYMENT_APPOINTMENT = {
+      date: 1715338800,
+      time: "10:30",
+      appointmentValue: 5000, // $50 in cents
+    };
+
+    beforeEach(async () => {
+      [, payer] = await ethers.getSigners();
+
+      // Deploy MockERC20 (USDC with 6 decimals)
+      const usdcFactory = new MockERC20__factory(owner);
+      usdc = await usdcFactory.deploy("USDC", "USDC", 6, ethers.parseUnits("1000000", 6));
+
+      // Register a pet and schedule an appointment
+      await registry.connect(owner).registerPet(
+        PET_1.name,
+        PET_1.age,
+        PET_1.animalType,
+        PET_1.caretakerName,
+        PET_1.caretakerPhone
+      );
+      await registry.connect(owner).scheduleAppointment(
+        1,
+        PAYMENT_APPOINTMENT.date,
+        PAYMENT_APPOINTMENT.time,
+        PAYMENT_APPOINTMENT.appointmentValue
+      );
+
+      // Give payer USDC and approve registry to spend
+      await usdc.connect(owner).transfer(payer.address, ethers.parseUnits("1000", 6));
+      await usdc.connect(payer).approve(registry.target, ethers.parseUnits("1000", 6));
+    });
+
+    it("should pay an unpaid appointment with USDC", async () => {
+      const tokenAddress = await usdc.getAddress();
+      const expectedAmount = ethers.parseUnits("50", 6); // 5000 cents → 50 USDC
+
+      const tx = await registry.connect(payer).payAppointmentToken(1, tokenAddress);
+
+      await expect(tx)
+        .to.emit(registry, "AppointmentPaidToken")
+        .withArgs(1, payer.address, tokenAddress, expectedAmount);
+
+      const appointment = await registry.getAppointment(1);
+      expect(appointment.paidValue).to.equal(PAYMENT_APPOINTMENT.appointmentValue);
+    });
+
+    it("should revert when appointment does not exist", async () => {
+      await expect(
+        registry.connect(payer).payAppointmentToken(999, await usdc.getAddress())
+      ).to.be.revertedWith("Appointment does not exist");
+    });
+
+    it("should revert when appointment already paid", async () => {
+      await registry.connect(payer).payAppointmentToken(1, await usdc.getAddress());
+
+      await expect(
+        registry.connect(payer).payAppointmentToken(1, await usdc.getAddress())
+      ).to.be.revertedWith("Already paid");
+    });
+
+    it("should revert when allowance is zero", async () => {
+      await usdc.connect(payer).approve(registry.target, 0);
+
+      await expect(
+        registry.connect(payer).payAppointmentToken(1, await usdc.getAddress())
+      ).to.be.revertedWith("Transfer failed");
+    });
+
+    it("should revert when balance is insufficient", async () => {
+      // Drain payer's USDC balance while keeping allowance intact
+      await usdc.connect(payer).transfer(owner.address, await usdc.balanceOf(payer.address));
+
+      await expect(
+        registry.connect(payer).payAppointmentToken(1, await usdc.getAddress())
+      ).to.be.revertedWith("Transfer failed");
+    });
+
+    it("should allow owner to withdraw tokens", async () => {
+      await registry.connect(payer).payAppointmentToken(1, await usdc.getAddress());
+
+      const contractBalanceBefore = await usdc.balanceOf(registry.target);
+      expect(contractBalanceBefore).to.equal(ethers.parseUnits("50", 6));
+
+      const ownerBalanceBefore = await usdc.balanceOf(owner.address);
+
+      await registry.connect(owner).withdrawToken(await usdc.getAddress());
+
+      expect(await usdc.balanceOf(registry.target)).to.equal(0);
+      expect(await usdc.balanceOf(owner.address)).to.equal(ownerBalanceBefore + ethers.parseUnits("50", 6));
+    });
+
+    it("should revert when non-owner tries to withdraw", async () => {
+      await expect(
+        registry.connect(payer).withdrawToken(await usdc.getAddress())
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("should reject direct ETH transfers", async () => {
+      await expect(
+        owner.sendTransaction({ to: registry.target, value: ethers.parseEther("1") })
+      ).to.be.revertedWith("ETH not supported");
+    });
+
+    it("should revert when token decimals are ≤ 2", async () => {
+      // Deploy a MockERC20 with 1 decimal to trigger the _centsToTokenUnits guard
+      const lowDecFactory = new MockERC20__factory(owner);
+      const lowDecToken = await lowDecFactory.deploy("LOW", "LOW", 1, ethers.parseUnits("1000", 1));
+      await lowDecToken.connect(owner).transfer(payer.address, ethers.parseUnits("100", 1));
+      await lowDecToken.connect(payer).approve(registry.target, ethers.parseUnits("100", 1));
+
+      await expect(
+        registry.connect(payer).payAppointmentToken(1, await lowDecToken.getAddress())
+      ).to.be.revertedWith("Token decimals must be > 2");
     });
   });
 });
