@@ -32,9 +32,9 @@ Chain strategy: stacked-to-main
 
 ## Phase 2: Frontend Hooks + ABIs
 
-- [ ] 2.1 Modify `web-app/src/hooks/web3/contract.ts` — add `payAppointmentToken`/`withdrawToken`/`owner` ABI entries, `erc20ABI` constant, `VITE_USDC_ADDRESS` env export
-- [ ] 2.2 Create `web-app/src/hooks/web3/usePayAppointmentToken.ts` — single hook: allowance check via `useReadContract`, approve + pay via `useWriteContract` + `useWaitForTransactionReceipt`, `PaymentState` discriminated union, APPOINTMENTS_QUERY_KEY invalidation on success
-- [ ] 2.3 Create `web-app/src/hooks/web3/__tests__/usePayAppointmentToken.test.tsx` — 3 Vitest cases: sufficient allowance skips approval, approval then pay, error state
+- [x] 2.1 Modify `web-app/src/hooks/web3/contract.ts` — add `payAppointmentToken`/`withdrawToken`/`owner` ABI entries, `erc20ABI` constant, `VITE_USDC_ADDRESS` env export
+- [x] 2.2 Create `web-app/src/hooks/web3/usePayAppointmentToken.ts` — single hook: allowance check via `useReadContract`, approve + pay via `useWriteContract` + `useWaitForTransactionReceipt`, `PaymentState` discriminated union, APPOINTMENTS_QUERY_KEY invalidation on success
+- [x] 2.3 Create `web-app/src/hooks/web3/__tests__/usePayAppointmentToken.test.tsx` — 3 Vitest cases: sufficient allowance skips approval, approval then pay, error state
 
 ## Phase 3: Frontend UI
 
