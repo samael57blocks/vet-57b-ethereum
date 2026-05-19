@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { VET_REGISTRY_ADDRESS, vetRegistryABI } from "./contract";
 
@@ -24,6 +25,9 @@ export type TxState =
 /**
  * Hook to register a new pet via the VetRegistry contract.
  *
+ * Stores the tx hash in local state so even if wagmi resets,
+ * useWaitForTransactionReceipt keeps polling for the receipt.
+ *
  * Usage:
  * ```tsx
  * const { registerPet, txState } = useRegisterPet();
@@ -40,9 +44,16 @@ export function useRegisterPet() {
     error: writeError,
   } = useWriteContract();
 
+  /** Stable tx hash — once set, never clears. Keeps useWaitForTransactionReceipt alive. */
+  const [stableTxHash, setStableTxHash] = useState<`0x${string}` | undefined>();
+
+  useEffect(() => {
+    if (txHash) setStableTxHash(txHash);
+  }, [txHash]);
+
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
-      hash: txHash,
+      hash: stableTxHash,
     });
 
   /**
@@ -68,13 +79,13 @@ export function useRegisterPet() {
 
   if (writeError) {
     txState = { status: "error", error: writeError };
-  } else if (isConfirmed && txHash) {
-    txState = { status: "success", txHash };
+  } else if (isConfirmed) {
+    txState = { status: "success", txHash: stableTxHash ?? "" };
   } else if (isConfirming) {
     txState = { status: "processing" };
   } else if (isPending) {
     txState = { status: "pending" };
   }
 
-  return { registerPet, txState, txHash };
+  return { registerPet, txState, txHash: stableTxHash };
 }

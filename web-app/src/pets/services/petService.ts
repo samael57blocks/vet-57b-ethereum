@@ -18,4 +18,4 @@ export interface IPetService {
  * - VITE_USE_MOCK_DATA=true → MockPetService (hardcoded data)
  * - VITE_USE_MOCK_DATA=false → Web3PetService (reads from Ethereum contract)
  */
-export const PetService: IPetService = import.meta.env.VITE_USE_MOCK_DATA ? MockPetService : Web3PetService;
+export const PetService: IPetService = import.meta.env.VITE_USE_MOCK_DATA === "true" ? MockPetService : Web3PetService;

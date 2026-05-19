@@ -1,10 +1,8 @@
-# Pet Registration Specification
+# Delta for pet-registration
 
-## Purpose
+New capability — no existing behavior to modify. All requirements are ADDED.
 
-Form-driven pet registration via contract write with wallet guard, transaction feedback, and automatic list refresh. Users connect their wallet, fill pet details, and submit to the VetRegistry contract.
-
-## Requirements
+## ADDED Requirements
 
 ### Requirement: Pet Registration Form
 
