@@ -38,6 +38,20 @@ vi.mock("@tanstack/react-query", () => ({
     }),
 }));
 
+// Payment mocks
+const mockUsePayAppointmentToken = vi.fn();
+vi.mock("../../../hooks/web3/usePayAppointmentToken", () => ({
+    usePayAppointmentToken: (...args: any[]) => mockUsePayAppointmentToken(...args),
+}));
+
+vi.mock("../../../hooks/web3/contract", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("../../../hooks/web3/contract")>();
+    return {
+        ...actual,
+        USDC_ADDRESS: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    };
+});
+
 // ---------------------------------------------------------------------------
 // Sample Data
 // ---------------------------------------------------------------------------
@@ -105,6 +119,13 @@ describe("AppointmentsView", () => {
         mockScheduleAppointment.mockReset();
         mockReset.mockReset();
         mockInvalidateQueries.mockReset();
+        mockUsePayAppointmentToken.mockReset();
+        mockUsePayAppointmentToken.mockReturnValue({
+            paymentState: { status: "idle" },
+            approve: vi.fn(),
+            pay: vi.fn(),
+            reset: vi.fn(),
+        });
     });
 
     describe("Wallet Guard", () => {
@@ -484,6 +505,106 @@ describe("AppointmentsView", () => {
             // Click Try Again
             fireEvent.click(screen.getByRole("button", { name: /try again/i }));
             expect(mockScheduleAppointment).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe("Payment", () => {
+        it("shows 'Pay with USDC' button for unpaid appointments", () => {
+            render(
+                <AppointmentsView
+                    isConnected={true}
+                    pets={samplePets}
+                    selectedPetId="1"
+                    onSelectPet={vi.fn()}
+                    appointments={sampleAppointments}
+                    loading={false}
+                    error={null}
+                />
+            );
+
+            // Appointment 1 is unpaid (paidValue === 0)
+            const payButtons = screen.getAllByRole("button", { name: /pay with usdc/i });
+            expect(payButtons).toHaveLength(1);
+        });
+
+        it("does NOT show 'Pay with USDC' for paid appointments", () => {
+            // Render only the paid appointment
+            const paidOnly = sampleAppointments.filter((a) => a.paidValue > 0);
+            render(
+                <AppointmentsView
+                    isConnected={true}
+                    pets={samplePets}
+                    selectedPetId="1"
+                    onSelectPet={vi.fn()}
+                    appointments={paidOnly}
+                    loading={false}
+                    error={null}
+                />
+            );
+
+            expect(
+                screen.queryByRole("button", { name: /pay with usdc/i })
+            ).not.toBeInTheDocument();
+        });
+
+        it("modal shows approve step when allowance insufficient", () => {
+            // Mock the hook to return needs-approval
+            const mockApprove = vi.fn();
+            mockUsePayAppointmentToken.mockReturnValue({
+                paymentState: { status: "needs-approval" },
+                approve: mockApprove,
+                pay: vi.fn(),
+                reset: vi.fn(),
+            });
+
+            render(
+                <AppointmentsView
+                    isConnected={true}
+                    pets={samplePets}
+                    selectedPetId="1"
+                    onSelectPet={vi.fn()}
+                    appointments={sampleAppointments}
+                    loading={false}
+                    error={null}
+                />
+            );
+
+            // Click pay button on the unpaid appointment
+            const payBtn = screen.getByRole("button", { name: /pay with usdc/i });
+            fireEvent.click(payBtn);
+
+            // Modal should show Approve USDC button
+            expect(screen.getByRole("button", { name: /approve usdc/i })).toBeInTheDocument();
+        });
+
+        it("modal shows pay step when allowance sufficient", () => {
+            const mockPay = vi.fn();
+            mockUsePayAppointmentToken.mockReturnValue({
+                paymentState: { status: "ready-to-pay" },
+                approve: vi.fn(),
+                pay: mockPay,
+                reset: vi.fn(),
+            });
+
+            render(
+                <AppointmentsView
+                    isConnected={true}
+                    pets={samplePets}
+                    selectedPetId="1"
+                    onSelectPet={vi.fn()}
+                    appointments={sampleAppointments}
+                    loading={false}
+                    error={null}
+                />
+            );
+
+            // Click pay button on the unpaid appointment
+            const payBtn = screen.getByRole("button", { name: /pay with usdc/i });
+            fireEvent.click(payBtn);
+
+            // Modal should show Pay with USDC button alongside the card's button
+            const payButtons = screen.getAllByRole("button", { name: /pay with usdc/i });
+            expect(payButtons).toHaveLength(2); // Card button + modal button
         });
     });
 });

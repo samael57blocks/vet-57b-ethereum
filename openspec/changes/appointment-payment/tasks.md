@@ -38,6 +38,6 @@ Chain strategy: stacked-to-main
 
 ## Phase 3: Frontend UI
 
-- [ ] 3.1 Create `web-app/src/appointments/components/PayAppointmentModal.tsx` — approve step → pay step → tx feedback, `PayAppointmentModalProps` interface
-- [ ] 3.2 Modify `web-app/src/appointments/views/AppointmentsView.tsx` — add "Pay with USDC" button in `AppointmentCard` (condition: `paidValue === 0`), modal state management, imports
-- [ ] 3.3 Modify `web-app/src/appointments/views/__tests__/AppointmentsView.test.tsx` — add 4 testing-library cases: pay button shown/hidden, modal approve step, modal pay step, error display
+- [x] 3.1 Create `web-app/src/appointments/components/PayAppointmentModal.tsx` — approve step → pay step → tx feedback, `PayAppointmentModalProps` interface
+- [x] 3.2 Modify `web-app/src/appointments/views/AppointmentsView.tsx` — add "Pay with USDC" button in `AppointmentCard` (condition: `paidValue === 0`), modal state management, imports
+- [x] 3.3 Modify `web-app/src/appointments/views/__tests__/AppointmentsView.test.tsx` — add 4 testing-library cases: pay button shown/hidden, modal approve step, modal pay step

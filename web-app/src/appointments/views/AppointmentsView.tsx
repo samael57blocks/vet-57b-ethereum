@@ -4,6 +4,7 @@ import type { MedicalAppointment } from "../types/medicalAppointment";
 import { useScheduleAppointment } from "../../hooks/web3/useAppointments";
 import { APPOINTMENTS_QUERY_KEY } from "../hooks/useAppointments";
 import { useQueryClient } from "@tanstack/react-query";
+import { PayAppointmentModal } from "../components/PayAppointmentModal";
 
 /**
  * Props for the AppointmentsView component.
@@ -35,7 +36,13 @@ function formatDate(date: Date): string {
 /**
  * AppointmentCard — displays a single appointment's date, time, value, and paid status.
  */
-function AppointmentCard({ appointment }: { appointment: MedicalAppointment }) {
+function AppointmentCard({
+    appointment,
+    onPayAppointment,
+}: {
+    appointment: MedicalAppointment;
+    onPayAppointment?: (id: string) => void;
+}) {
     const isPaid = appointment.paidValue > 0;
 
     return (
@@ -62,6 +69,15 @@ function AppointmentCard({ appointment }: { appointment: MedicalAppointment }) {
                         {isPaid ? "Paid" : "Pending"}
                     </span>
                 </p>
+                {!isPaid && onPayAppointment && (
+                    <button
+                        className="btn-primary"
+                        onClick={() => onPayAppointment(appointment.id)}
+                        style={{ marginTop: "0.75rem" }}
+                    >
+                        Pay with USDC
+                    </button>
+                )}
             </div>
         </div>
     );
@@ -303,6 +319,19 @@ export function AppointmentsView({
     error,
 }: AppointmentsViewProps) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [payingAppointmentId, setPayingAppointmentId] = useState<string | null>(null);
+
+    /** Find the appointment being paid so we can pass its value to the modal */
+    const payingAppointment = payingAppointmentId
+        ? appointments.find((a) => a.id === payingAppointmentId)
+        : undefined;
+
+    const handlePaySuccess = () => {
+        setPayingAppointmentId(null);
+        if (selectedPetId) {
+            onSelectPet(selectedPetId);
+        }
+    };
 
     return (
         <main className="main-content">
@@ -360,7 +389,11 @@ export function AppointmentsView({
             {!loading && !error && appointments.length > 0 && (
                 <div className="pets-grid">
                     {appointments.map((appt) => (
-                        <AppointmentCard key={appt.id} appointment={appt} />
+                        <AppointmentCard
+                            key={appt.id}
+                            appointment={appt}
+                            onPayAppointment={setPayingAppointmentId}
+                        />
                     ))}
                 </div>
             )}
@@ -378,6 +411,16 @@ export function AppointmentsView({
                     onClose={() => {
                         setIsDialogOpen(false);
                     }}
+                />
+            )}
+
+            {/* Pay appointment modal */}
+            {payingAppointment && (
+                <PayAppointmentModal
+                    appointmentId={BigInt(payingAppointment.id)}
+                    amountInCents={payingAppointment.appointmentValue}
+                    onClose={() => setPayingAppointmentId(null)}
+                    onSuccess={handlePaySuccess}
                 />
             )}
         </main>
