@@ -230,12 +230,12 @@ describe("AppointmentsView", () => {
             expect(dates.length).toBeGreaterThanOrEqual(2);
 
             // Verify time
-            expect(screen.getByText("Time: 10:00")).toBeInTheDocument();
-            expect(screen.getByText("Time: 14:30")).toBeInTheDocument();
+            expect(screen.getByText("10:00")).toBeInTheDocument();
+            expect(screen.getByText("14:30")).toBeInTheDocument();
 
             // Verify value formatting
-            expect(screen.getByText("Value: $50.00")).toBeInTheDocument();
-            expect(screen.getByText("Value: $75.00")).toBeInTheDocument();
+            expect(screen.getByText("$50.00")).toBeInTheDocument();
+            expect(screen.getByText("$75.00")).toBeInTheDocument();
 
             // Verify paid status
             expect(screen.getByText("Pending")).toBeInTheDocument();

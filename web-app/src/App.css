@@ -403,3 +403,129 @@ button:focus-visible {
 .empty-state-text {
   font-size: 1.1rem;
 }
+
+/* ============================================
+   Appointment Card
+   ============================================ */
+.appointment-card {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.appointment-card:hover {
+  border-color: var(--color-accent);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.appointment-card-header {
+  padding: 1.25rem 1.25rem 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.appointment-card-date {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.appointment-card-body {
+  padding: 0.75rem 1.25rem 1.25rem;
+}
+
+.appointment-card-detail {
+  margin: 0.35rem 0;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.appointment-card-detail-label {
+  min-width: 3.5rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  opacity: 0.7;
+}
+
+.appointment-card-value {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.appointment-card-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.appointment-card-status--paid {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--color-accent);
+}
+
+.appointment-card-status--pending {
+  background: rgba(250, 204, 21, 0.15);
+  color: #facc15;
+}
+
+.appointment-card-status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.appointment-card-status--paid::before {
+  background: var(--color-accent);
+}
+
+.appointment-card-status--pending::before {
+  background: #facc15;
+}
+
+/* ============================================
+   Transaction Feedback
+   ============================================ */
+.tx-feedback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem 0;
+  text-align: center;
+}
+
+.tx-feedback p {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--color-text-muted);
+}
+
+.tx-error {
+  color: var(--color-error) !important;
+  font-weight: 500;
+}
+
+/* ============================================
+   Wallet Guard
+   ============================================ */
+.wallet-guard {
+  font-size: 1rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}

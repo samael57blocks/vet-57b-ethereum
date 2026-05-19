@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useConnect } from "wagmi";
 import type { Pet } from "../../pets/types/pet";
 import type { MedicalAppointment } from "../types/medicalAppointment";
 import { useScheduleAppointment } from "../../hooks/web3/useAppointments";
@@ -40,14 +39,26 @@ function AppointmentCard({ appointment }: { appointment: MedicalAppointment }) {
     const isPaid = appointment.paidValue > 0;
 
     return (
-        <div className="pet-card">
-            <div className="pet-info">
-                <p className="pet-name">{formatDate(appointment.date)}</p>
-                <p className="pet-detail">Time: {appointment.time}</p>
-                <p className="pet-detail">Value: {formatDollars(appointment.appointmentValue)}</p>
-                <p className="pet-detail">
-                    Status:{" "}
-                    <span className={isPaid ? "status-paid" : "status-pending"}>
+        <div className="appointment-card">
+            <div className="appointment-card-header">
+                <p className="appointment-card-date">{formatDate(appointment.date)}</p>
+            </div>
+            <div className="appointment-card-body">
+                <p className="appointment-card-detail">
+                    <span className="appointment-card-detail-label">Time</span>
+                    <span className="appointment-card-value">{appointment.time}</span>
+                </p>
+                <p className="appointment-card-detail">
+                    <span className="appointment-card-detail-label">Value</span>
+                    <span className="appointment-card-value">{formatDollars(appointment.appointmentValue)}</span>
+                </p>
+                <p className="appointment-card-detail">
+                    <span className="appointment-card-detail-label">Status</span>
+                    <span
+                        className={`appointment-card-status ${
+                            isPaid ? "appointment-card-status--paid" : "appointment-card-status--pending"
+                        }`}
+                    >
                         {isPaid ? "Paid" : "Pending"}
                     </span>
                 </p>
