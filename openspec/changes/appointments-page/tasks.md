@@ -36,37 +36,37 @@ Chain strategy: pending
 
 ## Phase 2: Foundation — Rename + Service Layer
 
-- [ ] 2.1 `git mv src/appoinments/ src/appointments/` + fix all import paths in a single atomic commit
-- [ ] 2.2 Create `web-app/src/appointments/services/appointmentService.ts` — `IAppointmentService` interface + `AppointmentService` factory (env-var gated, mirrors `petService.ts`)
-- [ ] 2.3 Create `web-app/src/appointments/services/mock/appointmentService.ts` — hardcoded sample appointments list matching existing type
-- [ ] 2.4 Create `web-app/src/appointments/services/web3/appointmentService.ts` — reads via viem publicClient: `getAppointmentCount()` → `getPetAppointments(petId)` → `getAppointment(id)` per ID
+- [x] 2.1 `git mv src/appoinments/ src/appointments/` + fix all import paths in a single atomic commit
+- [x] 2.2 Create `web-app/src/appointments/services/appointmentService.ts` — `IAppointmentService` interface + `AppointmentService` factory (env-var gated, mirrors `petService.ts`)
+- [x] 2.3 Create `web-app/src/appointments/services/mock/appointmentService.ts` — hardcoded sample appointments list matching existing type
+- [x] 2.4 Create `web-app/src/appointments/services/web3/appointmentService.ts` — reads via viem publicClient: `getAppointmentCount()` → `getPetAppointments(petId)` → `getAppointment(id)` per ID
 
 ## Phase 3: Hooks — Read + Write
 
-- [ ] 3.1 Create `web-app/src/appointments/hooks/useAppointments.ts` — TanStack Query hook with key `['vetRegistry', 'appointments', { petId }]`, calls `AppointmentService.getAppointments(petId)`
-- [ ] 3.2 Refactor `web-app/src/hooks/web3/useAppointments.ts`:
+- [x] 3.1 Create `web-app/src/appointments/hooks/useAppointments.ts` — TanStack Query hook with key `['vetRegistry', 'appointments', { petId }]`, calls `AppointmentService.getAppointments(petId)`
+- [x] 3.2 Refactor `web-app/src/hooks/web3/useAppointments.ts`:
   - Remove the `useAppointments()` placeholder (replaced by 3.1)
   - Refactor `useScheduleAppointment()` to expose `txState: TxState` (same pattern as `useRegisterPet` — idle/pending/processing/success/error)
-- [ ] 3.3 Wire query invalidation: on `useScheduleAppointment` success → `queryClient.invalidateQueries({ queryKey: ['vetRegistry', 'appointments'] })`
+- [x] 3.3 Wire query invalidation: on `useScheduleAppointment` success → `queryClient.invalidateQueries({ queryKey: ['vetRegistry', 'appointments'] })`
 
 ## Phase 4: UI — Page + View + Router
 
-- [ ] 4.1 Add `{ path: "/appointments", element: <AppointmentsPage /> }` to `web-app/src/router.tsx`
-- [ ] 4.2 Create `web-app/src/appointments/pages/AppointmentsPage.tsx` — data fetching via `usePetsOverview` + `useAppointments(petId)`, loading/error/empty states, passes data to view
-- [ ] 4.3 Create `web-app/src/appointments/views/AppointmentsView.tsx`:
+- [x] 4.1 Add `{ path: "/appointments", element: <AppointmentsPage /> }` to `web-app/src/router.tsx`
+- [x] 4.2 Create `web-app/src/appointments/pages/AppointmentsPage.tsx` — data fetching via `usePetsOverview` + `useAppointments(petId)`, loading/error/empty states, passes data to view
+- [x] 4.3 Create `web-app/src/appointments/views/AppointmentsView.tsx`:
   - WalletGuard when `!isConnected`
   - PetSelector dropdown (from parent-supplied pets list)
   - AppointmentList → AppointmentCard (date, time, value, paid status) per item
   - EmptyState ("No appointments scheduled") when list is empty
-- [ ] 4.4 Create `ScheduleDialog` (inline within AppointmentsView or separate component):
+- [x] 4.4 Create `ScheduleDialog` (inline within AppointmentsView or separate component):
   - Form: pet (read-only), date picker (future-only validation), time input, value input
   - Validation errors per field
   - TxFeedback: pending ("Confirm in MetaMask…") → processing ("Transaction processing…") → success/error with retry
 
 ## Phase 5: Tests
 
-- [ ] 5.1 Write hook tests for `useAppointments(petId)` — `renderHook` + mocked service + `QueryClientProvider`, verify data loading and cache behavior
-- [ ] 5.2 Write view component tests (RTL) for `AppointmentsView`:
+- [x] 5.1 Write hook tests for `useAppointments(petId)` — `renderHook` + mocked service + `QueryClientProvider`, verify data loading and cache behavior
+- [x] 5.2 Write view component tests (RTL) for `AppointmentsView`:
   - Wallet guard shows when disconnected, hides when connected
   - Pet selector renders with pet list
   - Empty state shows when no appointments
@@ -77,17 +77,17 @@ Chain strategy: pending
 
 ## Acceptance Criteria
 
-- [ ] All 3 view functions pass Hardhat contract tests
-- [ ] `npx hardhat compile` passes with new functions
-- [ ] `/appointments` route renders (not 404)
-- [ ] Select pet from dropdown → appointments list appears
-- [ ] Empty state shows "No appointments scheduled" when none exist
-- [ ] Wallet guard shows "Connect your wallet to view appointments" when disconnected
-- [ ] Schedule form validates: future date, non-empty time, value > 0, pet selected
-- [ ] Successful schedule → TxFeedback shows lifecycle → list auto-refreshes
-- [ ] User rejection in MetaMask shows error + form stays open for retry
-- [ ] Hook tests pass (`vitest run`)
-- [ ] View component tests pass (`vitest run`)
+- [x] All 3 view functions pass Hardhat contract tests
+- [x] `npx hardhat compile` passes with new functions
+- [x] `/appointments` route renders (not 404)
+- [x] Select pet from dropdown → appointments list appears
+- [x] Empty state shows "No appointments scheduled" when none exist
+- [x] Wallet guard shows "Connect your wallet to view appointments" when disconnected
+- [x] Schedule form validates: future date, non-empty time, value > 0, pet selected
+- [x] Successful schedule → TxFeedback shows lifecycle → list auto-refreshes
+- [x] User rejection in MetaMask shows error + form stays open for retry
+- [x] Hook tests pass (`vitest run`)
+- [x] View component tests pass (`vitest run`)
 
 ## Implementation Order
 
