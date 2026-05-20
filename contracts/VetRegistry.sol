@@ -1,22 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-/**
- * @title IERC20
- * @notice Minimal ERC20 interface for USDC payments
- */
-interface IERC20 {
-    function transferFrom(address from, address to, uint256 amount) external returns (bool);
-    function transfer(address to, uint256 amount) external returns (bool);
-    function balanceOf(address account) external view returns (uint256);
-    function decimals() external view returns (uint8);
-}
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
  * @title VetRegistry
  * @notice Veterinary clinic registry for managing pet medical records and appointments
  */
-contract VetRegistry {
+contract VetRegistry is Ownable {
+    using SafeERC20 for IERC20;
     // ==================== Types ====================
 
     enum AnimalType { Dog, Cat }
@@ -71,16 +66,7 @@ contract VetRegistry {
     mapping(uint256 => MedicalRecord) private _medicalRecords;
     mapping(uint256 => MedicalAppointment) private _appointments;
 
-    address public owner;
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Ownable: caller is not the owner");
-        _;
-    }
-
-    constructor() {
-        owner = msg.sender;
-    }
+    constructor() Ownable(msg.sender) {}
 
     // ==================== Public Functions ====================
 
@@ -249,12 +235,12 @@ contract VetRegistry {
         require(id > 0 && id <= _appointmentCount, "Appointment does not exist");
         require(_appointments[id].paidValue == 0, "Already paid");
 
-        uint256 amount = _centsToTokenUnits(_appointments[id].appointmentValue, IERC20(token).decimals());
+        uint256 amount = _centsToTokenUnits(_appointments[id].appointmentValue, IERC20Metadata(token).decimals());
 
         // CEI: update state BEFORE external call
         _appointments[id].paidValue = _appointments[id].appointmentValue;
 
-        require(IERC20(token).transferFrom(msg.sender, address(this), amount), "Transfer failed");
+        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
         emit AppointmentPaidToken(id, msg.sender, token, amount);
     }
@@ -266,7 +252,7 @@ contract VetRegistry {
     function withdrawToken(address token) external onlyOwner {
         uint256 bal = IERC20(token).balanceOf(address(this));
         require(bal > 0, "No tokens");
-        require(IERC20(token).transfer(owner, bal), "Transfer failed");
+        IERC20(token).safeTransfer(owner(), bal);
     }
 
     /**

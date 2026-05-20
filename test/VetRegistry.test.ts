@@ -264,7 +264,7 @@ describe("VetRegistry", () => {
 
       await expect(
         registry.connect(payer).payAppointmentToken(1, await usdc.getAddress())
-      ).to.be.revertedWith("Transfer failed");
+      ).to.be.revertedWithCustomError(registry, "SafeERC20FailedOperation");
     });
 
     it("should revert when balance is insufficient", async () => {
@@ -273,7 +273,7 @@ describe("VetRegistry", () => {
 
       await expect(
         registry.connect(payer).payAppointmentToken(1, await usdc.getAddress())
-      ).to.be.revertedWith("Transfer failed");
+      ).to.be.revertedWithCustomError(registry, "SafeERC20FailedOperation");
     });
 
     it("should allow owner to withdraw tokens", async () => {
@@ -293,7 +293,7 @@ describe("VetRegistry", () => {
     it("should revert when non-owner tries to withdraw", async () => {
       await expect(
         registry.connect(payer).withdrawToken(await usdc.getAddress())
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount");
     });
 
     it("should reject direct ETH transfers", async () => {
