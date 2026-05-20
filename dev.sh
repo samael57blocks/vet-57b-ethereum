@@ -4,14 +4,15 @@ set -euo pipefail
 # ============================================================
 #  dev.sh — One-command dev environment for Vet57B
 #
-#  Starts Hardhat node (if not running), deploys VetRegistry,
-#  writes the address into web-app/.env, and launches Vite.
+#  Starts Hardhat node (if not running), deploys MockERC20 (USDC)
+#  and VetRegistry, writes contract addresses into web-app/.env,
+#  and launches Vite.
 # ============================================================
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 WEB_APP_DIR="$ROOT_DIR/web-app"
 ENV_FILE="$WEB_APP_DIR/.env"
-ENV_EXAMPLE="$WEB_APP_DIR/.example.env"
+ENV_EXAMPLE="$WEB_APP_DIR/.env.example"
 HARDHAT_NODE_PID=""
 HARDHAT_PORT=8545
 
@@ -37,7 +38,7 @@ fail() { printf "  \033[1;31m✗\033[0m %s\n" "$*"; exit 1; }
 setup_env() {
     log "Setting up web-app/.env..."
     if [ -f "$ENV_FILE" ]; then
-        ok ".env already exists, will update VITE_CONTRACT_ADDRESS"
+        ok ".env already exists, will update contract addresses"
     elif [ -f "$ENV_EXAMPLE" ]; then
         cp "$ENV_EXAMPLE" "$ENV_FILE"
         ok "Created .env from .example.env"
@@ -47,6 +48,7 @@ setup_env() {
 VITE_BACKEND_URL=http://localhost:4000
 VITE_USE_MOCK_DATA=false
 VITE_CONTRACT_ADDRESS=
+VITE_USDC_ADDRESS=
 EOF
         ok "Created minimal .env (no .example.env found)"
     fi
@@ -82,30 +84,36 @@ start_hardhat() {
     fail "Hardhat node did not start in time. Check /tmp/hardhat-node.log"
 }
 
-# ── 3. Deploy contract ───────────────────────────────────────
-deploy_contract() {
-    log "Deploying VetRegistry..."
+# ── 3. Deploy contracts ───────────────────────────────────────
+deploy_contracts() {
+    log "Deploying MockERC20 (USDC) and VetRegistry..."
     cd "$ROOT_DIR"
 
     local deploy_output
     deploy_output=$(npx hardhat run scripts/deploy.ts --network localhost 2>&1)
 
-    local address
-    address=$(echo "$deploy_output" | grep -oP 'VetRegistry deployed to: \K(0x[a-fA-F0-9]{40})')
+    local vet_address
+    vet_address=$(echo "$deploy_output" | grep -oP 'VITE_CONTRACT_ADDRESS=\K(0x[a-fA-F0-9]{40})')
 
-    if [ -z "$address" ]; then
-        fail "Could not extract deployed address. Output:\n$deploy_output"
+    local usdc_address
+    usdc_address=$(echo "$deploy_output" | grep -oP 'VITE_USDC_ADDRESS=\K(0x[a-fA-F0-9]{40})')
+
+    if [ -z "$vet_address" ] || [ -z "$usdc_address" ]; then
+        fail "Could not extract deployed addresses. Output:\n$deploy_output"
     fi
 
-    ok "VetRegistry deployed at $address"
+    ok "VetRegistry deployed at $vet_address"
+    ok "MockERC20 (USDC) deployed at $usdc_address"
 
     # ── 4. Update .env ────────────────────────────────────────
-    log "Updating VITE_CONTRACT_ADDRESS in web-app/.env..."
+    log "Updating web-app/.env with contract addresses..."
 
-    # Remove any existing VITE_CONTRACT_ADDRESS line (case-insensitive)
+    # Remove existing VITE_CONTRACT_ADDRESS and VITE_USDC_ADDRESS lines
     sed -i '/^VITE_CONTRACT_ADDRESS=/Id' "$ENV_FILE"
-    # Append the new one
-    echo "VITE_CONTRACT_ADDRESS=$address" >> "$ENV_FILE"
+    sed -i '/^VITE_USDC_ADDRESS=/Id' "$ENV_FILE"
+    # Append fresh values
+    echo "VITE_CONTRACT_ADDRESS=$vet_address" >> "$ENV_FILE"
+    echo "VITE_USDC_ADDRESS=$usdc_address" >> "$ENV_FILE"
 
     # Also ensure VITE_USE_MOCK_DATA=false
     if grep -qi '^VITE_USE_MOCK_DATA=' "$ENV_FILE"; then
@@ -133,5 +141,5 @@ echo ""
 
 setup_env
 start_hardhat
-deploy_contract
+deploy_contracts
 start_vite
