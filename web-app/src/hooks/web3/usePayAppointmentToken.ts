@@ -53,6 +53,14 @@ export function usePayAppointmentToken(
   const { address } = useAccount();
   const queryClient = useQueryClient();
 
+  /**
+   * Tracks whether the user has fired pay().
+   * Once set, stays true until reset() — prevents the state derivation
+   * from falling through to isApproved/allowance during the render gap between
+   * wallet confirmation and useWaitForTransactionReceipt activation.
+   */
+  const [payTxSubmitted, setPayTxSubmitted] = useState(false);
+
   // -----------------------------------------------------------------------
   // Allowance check
   // -----------------------------------------------------------------------
@@ -128,6 +136,8 @@ export function usePayAppointmentToken(
   const {
     isLoading: isPayConfirming,
     isSuccess: isPaid,
+    isError: isPayReceiptError,
+    error: payReceiptError,
   } = useWaitForTransactionReceipt({
     hash: stablePayTxHash,
   });
@@ -155,6 +165,7 @@ export function usePayAppointmentToken(
 
   /** Pay for the appointment via payAppointmentToken. */
   const pay = useCallback(() => {
+    setPayTxSubmitted(true);
     writePay({
       address: VET_REGISTRY_ADDRESS,
       abi: vetRegistryABI,
@@ -168,6 +179,7 @@ export function usePayAppointmentToken(
    * Call this after success/error to allow a fresh start.
    */
   const reset = useCallback(() => {
+    setPayTxSubmitted(false);
     setStableApproveTxHash(undefined);
     setStablePayTxHash(undefined);
     resetApproveWrite?.();
@@ -176,24 +188,51 @@ export function usePayAppointmentToken(
 
   // -----------------------------------------------------------------------
   // Derive PaymentState
+  //
+  // Order matters: pay-side states are checked BEFORE approve/allowance
+  // to prevent fallthrough when isApproved is still true from a prior approve.
   // -----------------------------------------------------------------------
   let paymentState: PaymentState = { status: "idle" };
 
+  // 1. Pay-level errors first (highest priority)
   if (payError) {
     paymentState = { status: "error", error: payError };
-  } else if (approveError) {
+  }
+  // 2. Pay tx reverted on-chain
+  else if (isPayReceiptError && (stablePayTxHash || payTxHash)) {
+    paymentState = {
+      status: "error",
+      error: payReceiptError ?? new Error("Transaction reverted"),
+    };
+  }
+  // 3. Approve-level errors
+  else if (approveError) {
     paymentState = { status: "error", error: approveError };
-  } else if (isPaid) {
+  }
+  // 4. Pay tx confirmed on-chain → success
+  else if (isPaid) {
     paymentState = {
       status: "success",
       txHash: stablePayTxHash ?? "",
     };
-  } else if (isPayConfirming) {
+  }
+  // 5. useWaitForTransactionReceipt is actively watching for the receipt
+  else if (isPayConfirming) {
     paymentState = { status: "processing" };
-  } else if (isPayPending) {
+  }
+  // 6. MetaMask waiting for user to confirm the pay tx
+  else if (isPayPending) {
     paymentState = { status: "pending" };
-  } else if (isApproved) {
-    // Approve tx confirmed — check if refetch completed and allowance is now sufficient
+  }
+  // 7. RACE CONDITION GUARD: pay tx was submitted but useWaitForTransactionReceipt
+  //    hasn't kicked in yet (render gap between wallet confirm and watcher activation).
+  //    payTxSubmitted ensures we stay in "processing" instead of falling through to
+  //    isApproved/allowance checks.
+  else if (payTxSubmitted || stablePayTxHash || payTxHash) {
+    paymentState = { status: "processing" };
+  }
+  // 8. Approve tx confirmed — allowance may still be refetching
+  else if (isApproved) {
     if (hasSufficientAllowance) {
       paymentState = { status: "ready-to-pay" };
     } else if (isAllowanceFetching) {
@@ -202,12 +241,17 @@ export function usePayAppointmentToken(
       // Refetch completed but allowance still insufficient → approve more
       paymentState = { status: "needs-approval" };
     }
-  } else if (isApproveConfirming) {
+  }
+  // 9. Approve tx being confirmed on-chain
+  else if (isApproveConfirming) {
     paymentState = { status: "approval-processing" };
-  } else if (isApprovePending) {
+  }
+  // 10. MetaMask waiting for user to confirm the approve tx
+  else if (isApprovePending) {
     paymentState = { status: "approving" };
-  } else if (allowance !== undefined) {
-    // Allowance loaded — decide based on value
+  }
+  // 11. Allowance loaded — decide based on value
+  else if (allowance !== undefined) {
     paymentState = hasSufficientAllowance
       ? { status: "ready-to-pay" }
       : { status: "needs-approval" };

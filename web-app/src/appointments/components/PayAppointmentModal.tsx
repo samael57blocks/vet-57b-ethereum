@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePayAppointmentToken } from "../../hooks/web3/usePayAppointmentToken";
 import { USDC_ADDRESS } from "../../hooks/web3/contract";
 
@@ -35,15 +35,23 @@ export function PayAppointmentModal({
         tokenAmount,
     );
 
+    /**
+     * Stable ref for onSuccess — prevents the auto-close setTimeout from
+     * being cancelled and re-created every time the parent re-renders
+     * (which happens when onSuccess is an inline function).
+     */
+    const onSuccessRef = useRef(onSuccess);
+    onSuccessRef.current = onSuccess;
+
     /** Watch for success → auto-close via onSuccess */
     useEffect(() => {
         if (paymentState.status === "success") {
             const timer = setTimeout(() => {
-                onSuccess();
+                onSuccessRef.current();
             }, 2000);
             return () => clearTimeout(timer);
         }
-    }, [paymentState.status, onSuccess]);
+    }, [paymentState.status]);
 
     const handleClose = () => {
         reset();
