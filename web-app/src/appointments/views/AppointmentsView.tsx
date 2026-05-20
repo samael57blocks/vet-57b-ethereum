@@ -318,6 +318,7 @@ export function AppointmentsView({
     loading,
     error,
 }: AppointmentsViewProps) {
+    const queryClient = useQueryClient();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [payingAppointmentId, setPayingAppointmentId] = useState<string | null>(null);
 
@@ -327,6 +328,7 @@ export function AppointmentsView({
         : undefined;
 
     const handlePaySuccess = () => {
+        queryClient.invalidateQueries({ queryKey: APPOINTMENTS_QUERY_KEY });
         setPayingAppointmentId(null);
         if (selectedPetId) {
             onSelectPet(selectedPetId);
