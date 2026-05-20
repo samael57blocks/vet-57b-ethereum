@@ -26,7 +26,9 @@ export function PayAppointmentModal({
     onClose,
     onSuccess,
 }: PayAppointmentModalProps) {
-    const tokenAmount = BigInt(Math.round(amountInCents * 100)) * BigInt(10 ** 4);
+    // Convert cents to USDC units (6 decimals):
+    // contract does cents * 10^(tokenDecimals - 2) → 5000 * 10^4 = 50,000,000 for USDC
+    const tokenAmount = BigInt(amountInCents) * BigInt(10 ** 4);
     const { paymentState, approve, pay, reset } = usePayAppointmentToken(
         appointmentId,
         USDC_ADDRESS!,
