@@ -1,4 +1,6 @@
 node_modules
 .env
 pat.txt
-info.txt
+artifacts/
+cache/
+typechain-types/
