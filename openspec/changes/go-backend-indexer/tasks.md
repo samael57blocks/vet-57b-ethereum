@@ -34,10 +34,10 @@ Chain strategy: feature-branch-chain
 
 ## Phase 3: Persistence
 
-- [ ] 3.1 `backend/migrations/` — 6 migration files (3 up, 3 down) per DDL spec
-- [ ] 3.2 `backend/internal/store/store.go` — Store interface + pgx impl: all CRUD, upserts, stats
-- [ ] 3.3 `backend/internal/indexer/checkpoint.go` — checkpoint read/write via Store
-- [ ] 3.4 test: store upsert idempotency + checkpoint singleton (short-guard integration)
+- [x] 3.1 `backend/migrations/` — 6 migration files (3 up, 3 down) per DDL spec
+- [x] 3.2 `backend/internal/store/store.go` — Store interface + pgx impl: all CRUD, upserts, stats
+- [x] 3.3 `backend/internal/indexer/checkpoint.go` — checkpoint read/write via Store
+- [x] 3.4 test: store upsert idempotency + checkpoint singleton (short-guard integration)
 
 ## Phase 4: Indexer Core
 
