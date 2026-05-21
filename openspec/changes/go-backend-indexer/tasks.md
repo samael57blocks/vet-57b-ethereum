@@ -9,14 +9,14 @@ Chained PRs recommended: Yes
 Chain strategy: feature-branch-chain
 400-line budget risk: High
 
-| Unit | Goal | Base |
-|------|------|------|
+| Unit | Goal | Branch |
+|------|------|--------|
 | 1 | Foundation: go.mod, config, models, Makefile | feature/go-backend-indexer |
-| 2 | RPC: ethclient client + ABI event parsing | PR 1 branch |
-| 3 | Store: pgx impl + migrations + checkpoint | PR 2 branch |
-| 4 | Indexer: core loop, backfill, reorg detect | PR 3 branch |
-| 5 | API: chi router + 7 endpoints | PR 4 branch |
-| 6 | Deploy: main.go, Docker, compose, frontend wiring | PR 5 branch |
+| 2 | RPC: ethclient client + ABI event parsing | feature/go-backend-indexer |
+| 3 | Store: pgx impl + migrations + checkpoint | feature/go-backend-indexer |
+| 4 | Indexer: core loop, backfill, reorg detect | feature/go-backend-indexer |
+| 5 | API: chi router + 7 endpoints | feature/go-backend-indexer |
+| 6 | Deploy: main.go, Docker, compose, frontend wiring | feature/go-backend-indexer |
 
 ## Phase 1: Foundation
 
@@ -28,9 +28,9 @@ Chain strategy: feature-branch-chain
 
 ## Phase 2: RPC Layer
 
-- [ ] 2.1 `backend/internal/ethclient/client.go` — Client interface + WS/HTTP impl + backoff
-- [ ] 2.2 `backend/internal/ethclient/events.go` — 4 ABI consts + typed event parsers
-- [ ] 2.3 test: ABI parse all 4 events from known log hex (edge: zero-address, max uint)
+- [x] 2.1 `backend/internal/ethclient/client.go` — Client interface + WS/HTTP impl + backoff
+- [x] 2.2 `backend/internal/ethclient/events.go` — 4 ABI consts + typed event parsers
+- [x] 2.3 test: ABI parse all 4 events from known log hex (edge: zero-address, max uint)
 
 ## Phase 3: Persistence
 
