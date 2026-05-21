@@ -98,22 +98,28 @@ deploy_contracts() {
     local usdc_address
     usdc_address=$(echo "$deploy_output" | grep -oP 'VITE_USDC_ADDRESS=\K(0x[a-fA-F0-9]{40})')
 
-    if [ -z "$vet_address" ] || [ -z "$usdc_address" ]; then
+    local price_feed_address
+    price_feed_address=$(echo "$deploy_output" | grep -oP 'VITE_PRICE_FEED_ADDRESS=\K(0x[a-fA-F0-9]{40})')
+
+    if [ -z "$vet_address" ] || [ -z "$usdc_address" ] || [ -z "$price_feed_address" ]; then
         fail "Could not extract deployed addresses. Output:\n$deploy_output"
     fi
 
     ok "VetRegistry deployed at $vet_address"
     ok "MockERC20 (USDC) deployed at $usdc_address"
+    ok "MockPriceFeed deployed at $price_feed_address"
 
     # ── 4. Update .env ────────────────────────────────────────
     log "Updating web-app/.env with contract addresses..."
 
-    # Remove existing VITE_CONTRACT_ADDRESS and VITE_USDC_ADDRESS lines
+    # Remove existing contract address lines
     sed -i '/^VITE_CONTRACT_ADDRESS=/Id' "$ENV_FILE"
     sed -i '/^VITE_USDC_ADDRESS=/Id' "$ENV_FILE"
+    sed -i '/^VITE_PRICE_FEED_ADDRESS=/Id' "$ENV_FILE"
     # Append fresh values
     echo "VITE_CONTRACT_ADDRESS=$vet_address" >> "$ENV_FILE"
     echo "VITE_USDC_ADDRESS=$usdc_address" >> "$ENV_FILE"
+    echo "VITE_PRICE_FEED_ADDRESS=$price_feed_address" >> "$ENV_FILE"
 
     # Also ensure VITE_USE_MOCK_DATA=false
     if grep -qi '^VITE_USE_MOCK_DATA=' "$ENV_FILE"; then

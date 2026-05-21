@@ -7,6 +7,19 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
+ * @title AggregatorV3Interface
+ * @notice Minimal Chainlink AggregatorV3Interface — inline to avoid @chainlink/contracts dependency
+ */
+interface AggregatorV3Interface {
+    function decimals() external view returns (uint8);
+    function description() external view returns (string memory);
+    function version() external view returns (uint256);
+    function latestRoundData()
+        external view
+        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
+}
+
+/**
  * @title VetRegistry
  * @notice Veterinary clinic registry for managing pet medical records and appointments
  */
@@ -56,6 +69,13 @@ contract VetRegistry is Ownable {
         address indexed payer,
         address token,
         uint256 amount
+    );
+
+    event AppointmentPaidEth(
+        uint256 indexed appointmentId,
+        address indexed payer,
+        uint256 ethAmount,
+        uint256 usdCents
     );
 
     // ==================== State ====================
@@ -253,6 +273,57 @@ contract VetRegistry is Ownable {
         uint256 bal = IERC20(token).balanceOf(address(this));
         require(bal > 0, "No tokens");
         IERC20(token).safeTransfer(owner(), bal);
+    }
+
+    /**
+     * @notice Convert cents to expected ETH in wei using a Chainlink price
+     * @param cents Amount in dollar cents
+     * @param price ETH/USD price from AggregatorV3Interface (8 decimals)
+     * @return uint256 Expected ETH in wei
+     */
+    function _centsToEth(uint256 cents, uint256 price) internal pure returns (uint256) {
+        return (cents * 1e24) / price;
+    }
+
+    /**
+     * @notice Pay an appointment using ETH with price feed conversion
+     * @param id Appointment ID
+     * @param priceFeed Address of a Chainlink AggregatorV3Interface (ETH/USD)
+     *
+     * CEI pattern: state updated before refund. Excess ETH returned via low-level call.
+     */
+    function payAppointmentEth(uint256 id, address priceFeed) external payable {
+        require(id > 0 && id <= _appointmentCount, "Appointment does not exist");
+        require(_appointments[id].paidValue == 0, "Already paid");
+
+        AggregatorV3Interface feed = AggregatorV3Interface(priceFeed);
+        (, int256 price, , , ) = feed.latestRoundData();
+        require(price > 0, "Invalid price");
+
+        uint256 expectedEth = _centsToEth(_appointments[id].appointmentValue, uint256(price));
+        require(msg.value >= expectedEth, "Insufficient ETH");
+
+        // CEI: update state BEFORE external call (refund)
+        _appointments[id].paidValue = _appointments[id].appointmentValue;
+
+        // Refund excess ETH
+        uint256 refund = msg.value - expectedEth;
+        if (refund > 0) {
+            (bool sent, ) = msg.sender.call{value: refund}("");
+            require(sent, "Refund failed");
+        }
+
+        emit AppointmentPaidEth(id, msg.sender, expectedEth, _appointments[id].appointmentValue);
+    }
+
+    /**
+     * @notice Withdraw all ETH from the contract (owner only)
+     */
+    function withdrawEth() external onlyOwner {
+        uint256 balance = address(this).balance;
+        require(balance > 0, "No ETH");
+        (bool sent, ) = owner().call{value: balance}("");
+        require(sent, "Withdraw failed");
     }
 
     /**

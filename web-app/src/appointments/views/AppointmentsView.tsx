@@ -75,7 +75,7 @@ function AppointmentCard({
                         onClick={() => onPayAppointment(appointment.id)}
                         style={{ marginTop: "0.75rem" }}
                     >
-                        Pay with USDC
+                        Pay
                     </button>
                 )}
             </div>

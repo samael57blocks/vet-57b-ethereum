@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { VetRegistry, VetRegistry__factory, MockERC20, MockERC20__factory } from "../typechain-types";
+import { VetRegistry, VetRegistry__factory, MockERC20, MockERC20__factory, MockPriceFeed, MockPriceFeed__factory } from "../typechain-types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 describe("VetRegistry", () => {
@@ -312,6 +312,146 @@ describe("VetRegistry", () => {
       await expect(
         registry.connect(payer).payAppointmentToken(1, await lowDecToken.getAddress())
       ).to.be.revertedWith("Token decimals must be > 2");
+    });
+  });
+
+  describe("ETH Payment", () => {
+    let priceFeed: MockPriceFeed;
+    let payer: SignerWithAddress;
+    let priceFeedAddress: string;
+
+    const ETH_APPOINTMENT = {
+      date: 1715338800,
+      time: "10:30",
+      appointmentValue: 5000, // $50 in cents
+    };
+
+    // At $2000/ETH default price: expectedEth = (5000 * 1e24) / (2000 * 1e8) = 0.025 ETH
+    const EXPECTED_ETH = ethers.parseEther("0.025");
+
+    beforeEach(async () => {
+      [, payer] = await ethers.getSigners();
+
+      // Deploy MockPriceFeed with default $2000/ETH
+      const feedFactory = new MockPriceFeed__factory(owner);
+      priceFeed = await feedFactory.deploy();
+      priceFeedAddress = await priceFeed.getAddress();
+
+      // Register a pet and schedule an appointment
+      await registry.connect(owner).registerPet(
+        PET_1.name,
+        PET_1.age,
+        PET_1.animalType,
+        PET_1.caretakerName,
+        PET_1.caretakerPhone,
+      );
+      await registry.connect(owner).scheduleAppointment(
+        1,
+        ETH_APPOINTMENT.date,
+        ETH_APPOINTMENT.time,
+        ETH_APPOINTMENT.appointmentValue,
+      );
+    });
+
+    it("should pay an unpaid appointment with exact ETH", async () => {
+      const tx = await registry.connect(payer).payAppointmentEth(1, priceFeedAddress, {
+        value: EXPECTED_ETH,
+      });
+
+      await expect(tx)
+        .to.emit(registry, "AppointmentPaidEth")
+        .withArgs(1, payer.address, EXPECTED_ETH, ETH_APPOINTMENT.appointmentValue);
+
+      const appointment = await registry.getAppointment(1);
+      expect(appointment.paidValue).to.equal(ETH_APPOINTMENT.appointmentValue);
+    });
+
+    it("should refund excess ETH", async () => {
+      const excessAmount = ethers.parseEther("0.03"); // 0.03 ETH, 0.005 more than needed
+      const payerBalanceBefore = await ethers.provider.getBalance(payer.address);
+
+      const tx = await registry.connect(payer).payAppointmentEth(1, priceFeedAddress, {
+        value: excessAmount,
+      });
+
+      const receipt = await tx.wait();
+      const gasCost = receipt!.gasUsed * receipt!.gasPrice;
+
+      // After tx: payer sent 0.03 ETH, 0.005 should be refunded, so net cost = 0.025 + gas
+      const payerBalanceAfter = await ethers.provider.getBalance(payer.address);
+      const netCost = payerBalanceBefore - payerBalanceAfter;
+      expect(netCost).to.equal(EXPECTED_ETH + gasCost);
+
+      // paidValue stores cents, not msg.value
+      const appointment = await registry.getAppointment(1);
+      expect(appointment.paidValue).to.equal(ETH_APPOINTMENT.appointmentValue);
+    });
+
+    it("should revert when appointment does not exist", async () => {
+      await expect(
+        registry.connect(payer).payAppointmentEth(999, priceFeedAddress, {
+          value: EXPECTED_ETH,
+        }),
+      ).to.be.revertedWith("Appointment does not exist");
+    });
+
+    it("should revert when appointment already paid", async () => {
+      await registry.connect(payer).payAppointmentEth(1, priceFeedAddress, {
+        value: EXPECTED_ETH,
+      });
+
+      await expect(
+        registry.connect(payer).payAppointmentEth(1, priceFeedAddress, {
+          value: EXPECTED_ETH,
+        }),
+      ).to.be.revertedWith("Already paid");
+    });
+
+    it("should revert when insufficient ETH sent", async () => {
+      const lowAmount = ethers.parseEther("0.01"); // Only $20 at $2000/ETH — insufficient for $50
+
+      await expect(
+        registry.connect(payer).payAppointmentEth(1, priceFeedAddress, {
+          value: lowAmount,
+        }),
+      ).to.be.revertedWith("Insufficient ETH");
+    });
+
+    it("should revert when price is zero", async () => {
+      await priceFeed.setPrice(0);
+
+      await expect(
+        registry.connect(payer).payAppointmentEth(1, priceFeedAddress, {
+          value: EXPECTED_ETH,
+        }),
+      ).to.be.revertedWith("Invalid price");
+    });
+
+    it("should allow owner to withdraw ETH", async () => {
+      // Make a payment so the contract has ETH
+      await registry.connect(payer).payAppointmentEth(1, priceFeedAddress, {
+        value: EXPECTED_ETH,
+      });
+
+      const contractBalanceBefore = await ethers.provider.getBalance(registry.target);
+      expect(contractBalanceBefore).to.equal(EXPECTED_ETH);
+
+      const ownerBalanceBefore = await ethers.provider.getBalance(owner.address);
+
+      const tx = await registry.connect(owner).withdrawEth();
+      const receipt = await tx.wait();
+      const gasCost = receipt!.gasUsed * receipt!.gasPrice;
+
+      expect(await ethers.provider.getBalance(registry.target)).to.equal(0);
+      expect(await ethers.provider.getBalance(owner.address)).to.equal(
+        ownerBalanceBefore + EXPECTED_ETH - gasCost,
+      );
+    });
+
+    it("should revert when non-owner tries to withdraw ETH", async () => {
+      await expect(
+        registry.connect(payer).withdrawEth(),
+      ).to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount");
     });
   });
 });

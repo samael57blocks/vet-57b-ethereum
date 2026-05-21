@@ -26,11 +26,24 @@ async function main() {
   console.log(`VetRegistry deployed to: ${address}`);
 
   // -------------------------------------------------------------------
+  // 3. Deploy MockPriceFeed
+  // -------------------------------------------------------------------
+  console.log("Deploying MockPriceFeed...");
+
+  const priceFeedFactory = await ethers.getContractFactory("MockPriceFeed");
+  const priceFeed = await priceFeedFactory.deploy();
+  await priceFeed.waitForDeployment();
+
+  const priceFeedAddress = await priceFeed.getAddress();
+  console.log(`MockPriceFeed deployed to: ${priceFeedAddress}`);
+
+  // -------------------------------------------------------------------
   // Summary
   // -------------------------------------------------------------------
   console.log("\n=== Deployment Summary ===");
   console.log(`VITE_CONTRACT_ADDRESS=${address}`);
   console.log(`VITE_USDC_ADDRESS=${usdcAddress}`);
+  console.log(`VITE_PRICE_FEED_ADDRESS=${priceFeedAddress}`);
 }
 
 main().catch((error) => {

@@ -128,6 +128,33 @@ export const vetRegistryABI = [
   },
   {
     type: "function",
+    name: "payAppointmentEth",
+    inputs: [
+      { name: "id", type: "uint256" },
+      { name: "priceFeed", type: "address" },
+    ],
+    outputs: [],
+    stateMutability: "payable",
+  },
+  {
+    type: "function",
+    name: "withdrawEth",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "event",
+    name: "AppointmentPaidEth",
+    inputs: [
+      { name: "appointmentId", type: "uint256", indexed: true },
+      { name: "payer", type: "address", indexed: true },
+      { name: "ethAmount", type: "uint256", indexed: false },
+      { name: "usdCents", type: "uint256", indexed: false },
+    ],
+  },
+  {
+    type: "function",
     name: "withdrawToken",
     inputs: [{ name: "token", type: "address" }],
     outputs: [],
@@ -184,8 +211,35 @@ export const erc20ABI = [
 ] as const;
 
 /**
+ * Minimal AggregatorV3Interface ABI for reading ETH/USD price from MockPriceFeed.
+ */
+export const priceFeedABI = [
+  {
+    type: "function",
+    name: "latestRoundData",
+    inputs: [],
+    outputs: [
+      { name: "roundId", type: "uint80" },
+      { name: "answer", type: "int256" },
+      { name: "startedAt", type: "uint256" },
+      { name: "updatedAt", type: "uint256" },
+      { name: "answeredInRound", type: "uint80" },
+    ],
+    stateMutability: "view",
+  },
+] as const;
+
+/**
  * USDC token address from environment.
  * Set VITE_USDC_ADDRESS in .env with the deployed USDC address for the target network.
  */
 export const USDC_ADDRESS =
   import.meta.env.VITE_USDC_ADDRESS as `0x${string}` | undefined;
+
+/**
+ * MockPriceFeed address for ETH/USD price conversion.
+ * Set VITE_PRICE_FEED_ADDRESS in .env with the deployed MockPriceFeed address.
+ * When undefined, the ETH payment option is hidden in the UI.
+ */
+export const PRICE_FEED_ADDRESS =
+  import.meta.env.VITE_PRICE_FEED_ADDRESS as `0x${string}` | undefined;
