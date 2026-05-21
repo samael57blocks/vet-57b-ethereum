@@ -17,14 +17,18 @@ test-short:
 	go test -v -race -count=1 -short ./...
 
 migrate:
-	@echo "Migration command not implemented yet."
-	@echo "Usage: make migrate args='up'"
-	@echo "  make migrate args='down'"
+	@echo "Migrations run automatically on startup via cmd/indexer/main.go (golang-migrate)."
+	@echo "To run manually, install golang-migrate CLI:"
+	@echo "  migrate -path migrations -database '$(DATABASE_URL)' up"
+	@echo ""
+	@echo "Usage: make migrate args='up|down|goto N'"
+	@echo "  make migrate args='up'"
+	@echo "  make migrate args='down 1'"
 	@echo "  make migrate args='goto 1'"
 
 docker-build:
-	@echo "Docker build not implemented yet."
-	@echo "Run: docker build -t vet-57b-indexer ."
+	@echo "Building Docker image..."
+	docker build -t vet-57b-indexer .
 
 clean:
 	@echo "Cleaning..."

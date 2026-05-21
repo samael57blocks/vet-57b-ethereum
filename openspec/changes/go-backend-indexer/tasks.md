@@ -55,12 +55,12 @@ Chain strategy: feature-branch-chain
 
 ## Phase 6: Deployment + Frontend
 
-- [ ] 6.1 `backend/cmd/indexer/main.go` — goroutines, signals, migration runner
-- [ ] 6.2 `backend/Dockerfile` — multi-stage Go build (alpine)
-- [ ] 6.3 `docker-compose.yml` — postgres:16 + indexer (depends_on + healthcheck)
-- [ ] 6.4 `web-app/src/pets/services/petService.ts` — add AxiosPetService, update factory
-- [ ] 6.5 `web-app/src/appointments/services/appointmentService.ts` — add AxiosAppointmentService, update factory
-- [ ] 6.6 `web-app/.env.example` — update VITE_BACKEND_URL port, clarify VITE_USE_MOCK_DATA
+- [x] 6.1 `backend/cmd/indexer/main.go` — goroutines, signals, migration runner
+- [x] 6.2 `backend/Dockerfile` — multi-stage Go build (alpine)
+- [x] 6.3 `docker-compose.yml` — postgres:16 + indexer (depends_on + healthcheck)
+- [x] 6.4 `web-app/src/pets/services/petService.ts` — add AxiosPetService, update factory
+- [x] 6.5 `web-app/src/appointments/services/appointmentService.ts` — add AxiosAppointmentService, update factory
+- [x] 6.6 `web-app/.env.example` — update VITE_BACKEND_URL port, clarify VITE_USE_MOCK_DATA
 
 ## Success Criteria Mapping
 
