@@ -32,6 +32,10 @@ type Store interface {
 	// Stats
 	GetStats(ctx context.Context) (*Stats, error)
 
+	// UpdateAppointmentPaidValue adds the given amount to the appointment's
+	// paid_value (used by AppointmentPaidToken and AppointmentPaidEth events).
+	UpdateAppointmentPaidValue(ctx context.Context, id uint64, amount string) error
+
 	// Reorg — deletes pets + appointments where block_number > given block.
 	// Returns total rows deleted across both tables.
 	DeleteEventsAfterBlock(ctx context.Context, blockNumber uint64) (int64, error)
@@ -381,6 +385,17 @@ func buildApptWhere(filter AppointmentFilter) (string, []interface{}) {
 		return "TRUE", args
 	}
 	return strings.Join(clauses, " AND "), args
+}
+
+// UpdateAppointmentPaidValue adds the given amount to the appointment's
+// paid_value column. Used by AppointmentPaidToken and AppointmentPaidEth events.
+func (s *pgxStore) UpdateAppointmentPaidValue(ctx context.Context, id uint64, amount string) error {
+	query := `UPDATE appointments SET paid_value = paid_value + $1::NUMERIC(78,0) WHERE id = $2`
+	_, err := s.pool.Exec(ctx, query, amount, id)
+	if err != nil {
+		return fmt.Errorf("store: update paid value for appointment %d: %w", id, err)
+	}
+	return nil
 }
 
 // ---------------------------------------------------------------------------

@@ -41,8 +41,8 @@ Chain strategy: feature-branch-chain
 
 ## Phase 4: Indexer Core
 
-- [ ] 4.1 `backend/internal/indexer/indexer.go` — Run(), backfill(), processBatch(), reorg detect
-- [ ] 4.2 test: processBatch with mock store; reorg path with mock client
+- [x] 4.1 `backend/internal/indexer/indexer.go` — Run(), backfill(), decodeAndUpsert(), detectReorg()
+- [x] 4.2 test: decodeAndUpsert with mock store (all 4 event types); reorg path with mock client; isConfirmed table-driven
 
 ## Phase 5: REST API
 

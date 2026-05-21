@@ -69,10 +69,19 @@ const appointmentPaidEthABI = `[{"anonymous":false,"inputs":[{"indexed":true,"na
 // ---------------------------------------------------------------------------
 
 var (
-	parsedMedicalRecordCreated     abi.ABI
+	parsedMedicalRecordCreated      abi.ABI
 	parsedMedicalAppointmentCreated abi.ABI
 	parsedAppointmentPaidToken      abi.ABI
 	parsedAppointmentPaidEth        abi.ABI
+)
+
+// Event signature hashes (topic[0] values) exported for the indexer to
+// dispatch logs to the correct parser.
+var (
+	MedicalRecordCreatedSig     common.Hash
+	MedicalAppointmentCreatedSig common.Hash
+	AppointmentPaidTokenSig      common.Hash
+	AppointmentPaidEthSig        common.Hash
 )
 
 func init() {
@@ -80,6 +89,11 @@ func init() {
 	mustParse(&parsedMedicalAppointmentCreated, medicalAppointmentCreatedABI)
 	mustParse(&parsedAppointmentPaidToken, appointmentPaidTokenABI)
 	mustParse(&parsedAppointmentPaidEth, appointmentPaidEthABI)
+
+	MedicalRecordCreatedSig = parsedMedicalRecordCreated.Events["MedicalRecordCreated"].ID
+	MedicalAppointmentCreatedSig = parsedMedicalAppointmentCreated.Events["MedicalAppointmentCreated"].ID
+	AppointmentPaidTokenSig = parsedAppointmentPaidToken.Events["AppointmentPaidToken"].ID
+	AppointmentPaidEthSig = parsedAppointmentPaidEth.Events["AppointmentPaidEth"].ID
 }
 
 func mustParse(target *abi.ABI, raw string) {
