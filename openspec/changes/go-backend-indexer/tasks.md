@@ -46,12 +46,12 @@ Chain strategy: feature-branch-chain
 
 ## Phase 5: REST API
 
-- [ ] 5.1 `backend/internal/api/router.go` — chi + middleware (CORS, logger, recoverer, timeout)
-- [ ] 5.2 `backend/internal/api/health.go` — GET /health (DB ping + last indexed block)
-- [ ] 5.3 `backend/internal/api/pets.go` — GET /pets (paginated, filterable) + GET /pets/{id}
-- [ ] 5.4 `backend/internal/api/appointments.go` — GET /appointments + /{id} + /pets/{id}/appointments
-- [ ] 5.5 `backend/internal/api/stats.go` — GET /stats/totals (aggregate)
-- [ ] 5.6 test: httptest + mock store for all endpoints, error codes, CORS
+- [x] 5.1 `backend/internal/api/router.go` — chi + middleware (CORS, logger, recoverer, timeout)
+- [x] 5.2 `backend/internal/api/health.go` — GET /health (DB ping + last indexed block)
+- [x] 5.3 `backend/internal/api/pets.go` — GET /pets (paginated, filterable) + GET /pets/{id}
+- [x] 5.4 `backend/internal/api/appointments.go` — GET /appointments + /{id} + /pets/{id}/appointments
+- [x] 5.5 `backend/internal/api/stats.go` — GET /stats/totals (aggregate)
+- [x] 5.6 test: httptest + mock store for all endpoints, error codes, CORS
 
 ## Phase 6: Deployment + Frontend
 
