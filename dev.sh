@@ -153,12 +153,12 @@ start_postgres() {
     log "Starting PostgreSQL via Docker Compose..."
 
     cd "$ROOT_DIR"
-    docker compose up -d postgres --wait 2>&1 || {
+    sudo docker compose up -d postgres --wait 2>&1 || {
         # If --wait is not supported, do manual healthcheck
-        docker compose up -d postgres 2>/dev/null
+        sudo docker compose up -d postgres 2>/dev/null
         local retries=0
         while [ $retries -lt 12 ]; do
-            if docker compose exec -T postgres pg_isready -U vet57b &>/dev/null; then
+            if sudo docker compose exec -T postgres pg_isready -U vet57b &>/dev/null; then
                 break
             fi
             sleep 2
@@ -178,7 +178,7 @@ start_indexer() {
     # Build the binary first so any compile errors surface early
     cd "$ROOT_DIR/backend"
     go build -o /tmp/vet-indexer ./cmd/indexer
-    cd "$ROOT_DIR"
+    cd "$ROOT_DIR/backend"
 
     # Start the indexer with localhost RPC endpoints
     DATABASE_URL="postgres://vet57b:vet57b@localhost:5432/vet57b?sslmode=disable" \

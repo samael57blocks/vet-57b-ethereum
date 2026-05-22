@@ -56,7 +56,7 @@ type AppointmentPaidEth struct {
 // Parsed once at startup via accounts/abi.JSON.
 // ---------------------------------------------------------------------------
 
-const medicalRecordCreatedABI = `[{"anonymous":false,"inputs":[{"indexed":true,"name":"id","type":"uint256"},{"indexed":false,"name":"name","type":"string"},{"indexed":false,"name":"age","type":"uint8"},{"indexed":false,"name":"animalType","type":"uint256"},{"indexed":false,"name":"caretakerName","type":"string"},{"indexed":false,"name":"caretakerPhone","type":"string"}],"name":"MedicalRecordCreated","type":"event"}]`
+const medicalRecordCreatedABI = `[{"anonymous":false,"inputs":[{"indexed":true,"name":"id","type":"uint256"},{"indexed":false,"name":"name","type":"string"},{"indexed":false,"name":"age","type":"uint8"},{"indexed":false,"name":"animalType","type":"uint8"},{"indexed":false,"name":"caretakerName","type":"string"},{"indexed":false,"name":"caretakerPhone","type":"string"}],"name":"MedicalRecordCreated","type":"event"}]`
 
 const medicalAppointmentCreatedABI = `[{"anonymous":false,"inputs":[{"indexed":true,"name":"id","type":"uint256"},{"indexed":true,"name":"petId","type":"uint256"},{"indexed":false,"name":"date","type":"uint256"},{"indexed":false,"name":"time","type":"string"},{"indexed":false,"name":"appointmentValue","type":"uint256"}],"name":"MedicalAppointmentCreated","type":"event"}]`
 
@@ -123,7 +123,7 @@ func ParseMedicalRecordCreated(log types.Log) (MedicalRecordCreated, error) {
 	// Indexed: id (uint256, topic[1])
 	result.Id = log.Topics[1].Big()
 
-	// Non-indexed: name (string), age (uint8), animalType (uint256),
+	// Non-indexed: name (string), age (uint8), animalType (uint8),
 	//              caretakerName (string), caretakerPhone (string)
 	unpacked, err := event.Inputs.NonIndexed().Unpack(log.Data)
 	if err != nil {
@@ -140,11 +140,9 @@ func ParseMedicalRecordCreated(log types.Log) (MedicalRecordCreated, error) {
 	if result.Age, ok = unpacked[1].(uint8); !ok {
 		return result, fmt.Errorf("MedicalRecordCreated: field[1] age is not uint8")
 	}
-	at, ok := unpacked[2].(*big.Int)
-	if !ok {
-		return result, fmt.Errorf("MedicalRecordCreated: field[2] animalType is not *big.Int")
+	if result.AnimalType, ok = unpacked[2].(uint8); !ok {
+		return result, fmt.Errorf("MedicalRecordCreated: field[2] animalType is not uint8")
 	}
-	result.AnimalType = uint8(at.Uint64())
 	if result.CaretakerName, ok = unpacked[3].(string); !ok {
 		return result, fmt.Errorf("MedicalRecordCreated: field[3] caretakerName is not string")
 	}
