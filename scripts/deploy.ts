@@ -38,6 +38,40 @@ async function main() {
   console.log(`MockPriceFeed deployed to: ${priceFeedAddress}`);
 
   // -------------------------------------------------------------------
+  // 4. Seed data — create pets and appointments for local dev
+  // -------------------------------------------------------------------
+  console.log("\nSeeding pets...");
+  const [owner] = await ethers.getSigners();
+
+  const pets = [
+    { name: "Max", age: 3, animalType: 0, caretaker: "Alice Johnson", phone: "+1-555-0101" },
+    { name: "Luna", age: 2, animalType: 1, caretaker: "Bob Smith", phone: "+1-555-0202" },
+    { name: "Rocky", age: 5, animalType: 0, caretaker: "Carol Davis", phone: "+1-555-0303" },
+  ];
+
+  for (const pet of pets) {
+    const tx = await contract.registerPet(pet.name, pet.age, pet.animalType, pet.caretaker, pet.phone);
+    await tx.wait();
+    console.log(`  Pet registered: ${pet.name} (${["Dog", "Cat"][pet.animalType]})`);
+  }
+  console.log("✓ 3 pets seeded");
+
+  const now = Math.floor(Date.now() / 1000);
+  const appointments = [
+    { petId: 1, date: now + 86400, time: "10:00", value: 5000 },   // $50 — tomorrow
+    { petId: 1, date: now + 2 * 86400, time: "14:30", value: 7500 }, // $75 — day after
+    { petId: 2, date: now + 86400, time: "11:00", value: 6000 },    // $60 — tomorrow
+    { petId: 3, date: now + 3 * 86400, time: "09:30", value: 4000 }, // $40 — 3 days
+  ];
+
+  for (const apt of appointments) {
+    const tx = await contract.scheduleAppointment(apt.petId, apt.date, apt.time, apt.value);
+    await tx.wait();
+    console.log(`  Appointment scheduled: pet #${apt.petId} at ${apt.time}`);
+  }
+  console.log("✓ 4 appointments seeded");
+
+  // -------------------------------------------------------------------
   // Summary
   // -------------------------------------------------------------------
   console.log("\n=== Deployment Summary ===");

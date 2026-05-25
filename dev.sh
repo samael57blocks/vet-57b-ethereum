@@ -51,6 +51,14 @@ log()  { printf "  \033[1;34m•\033[0m %s\n" "$*"; }
 ok()   { printf "  \033[1;32m✓\033[0m %s\n" "$*"; }
 fail() { printf "  \033[1;31m✗\033[0m %s\n" "$*"; exit 1; }
 
+# ── 0. Reset database — fresh state for each dev run ──────────
+reset_database() {
+    log "Resetting PostgreSQL database (docker compose down -v)..."
+    cd "$ROOT_DIR"
+    sudo docker compose down -v --remove-orphans 2>/dev/null || true
+    ok "Database volume cleared"
+}
+
 # ── 1. Ensure .env exists ─────────────────────────────────────
 setup_env() {
     log "Setting up web-app/.env..."
@@ -226,6 +234,7 @@ echo "  ║     🐾  Vet57B — Dev Environment     ║"
 echo "  ╚══════════════════════════════════════╝"
 echo ""
 
+reset_database
 setup_env
 start_hardhat
 deploy_contracts
