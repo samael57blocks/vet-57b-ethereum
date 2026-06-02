@@ -1,5 +1,5 @@
 import { useAccount, useConnect, useDisconnect } from "wagmi";
-import { injected } from "wagmi/connectors";
+import { metaMask } from "wagmi/connectors";
 
 function ConnectWallet() {
   const { address, isConnected } = useAccount();
@@ -20,7 +20,7 @@ function ConnectWallet() {
   }
 
   return (
-    <button className="btn-connect" onClick={() => connect({ connector: injected() })}>
+    <button className="btn-connect" onClick={() => connect({ connector: metaMask() })}>
       Connect Wallet
     </button>
   );
