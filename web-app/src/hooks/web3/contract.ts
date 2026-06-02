@@ -1,173 +1,18 @@
 /**
  * VetRegistry contract configuration for wagmi + viem.
  *
- * The ABI is auto-generated from the Hardhat compilation output.
+ * The ABI is auto-generated from the compiled artifact.
+ * Run \`node scripts/generate-abi.mjs\` (or \`./dev.sh\`) to regenerate.
+ *
  * Update VITE_CONTRACT_ADDRESS in .env with the deployed contract address.
  */
 
+import { vetRegistryABI } from "./abis";
+
+export { vetRegistryABI };
+
 export const VET_REGISTRY_ADDRESS =
   import.meta.env.VITE_CONTRACT_ADDRESS ?? "0x0000000000000000000000000000000000000000";
-
-export const vetRegistryABI = [
-  {
-    type: "event",
-    name: "MedicalAppointmentCreated",
-    inputs: [
-      { name: "id", type: "uint256", indexed: true },
-      { name: "petId", type: "uint256", indexed: true },
-      { name: "date", type: "uint256", indexed: false },
-      { name: "time", type: "string", indexed: false },
-      { name: "appointmentValue", type: "uint256", indexed: false },
-    ],
-  },
-  {
-    type: "event",
-    name: "MedicalRecordCreated",
-    inputs: [
-      { name: "id", type: "uint256", indexed: true },
-      { name: "name", type: "string", indexed: false },
-      { name: "age", type: "uint8", indexed: false },
-      { name: "animalType", type: "uint8", indexed: false },
-      { name: "caretakerName", type: "string", indexed: false },
-      { name: "caretakerPhone", type: "string", indexed: false },
-    ],
-  },
-  {
-    type: "function",
-    name: "getMedicalRecord",
-    inputs: [{ name: "id", type: "uint256" }],
-    outputs: [
-      {
-        name: "",
-        type: "tuple",
-        components: [
-          { name: "name", type: "string" },
-          { name: "age", type: "uint8" },
-          { name: "animalType", type: "uint8" },
-          { name: "caretakerName", type: "string" },
-          { name: "caretakerPhone", type: "string" },
-        ],
-      },
-    ],
-    stateMutability: "view",
-  },
-  {
-    type: "function",
-    name: "getPetCount",
-    inputs: [],
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "view",
-  },
-  {
-    type: "function",
-    name: "registerPet",
-    inputs: [
-      { name: "name", type: "string" },
-      { name: "age", type: "uint8" },
-      { name: "animalType", type: "uint8" },
-      { name: "caretakerName", type: "string" },
-      { name: "caretakerPhone", type: "string" },
-    ],
-    outputs: [{ name: "id", type: "uint256" }],
-    stateMutability: "nonpayable",
-  },
-  {
-    type: "function",
-    name: "scheduleAppointment",
-    inputs: [
-      { name: "petId", type: "uint256" },
-      { name: "date", type: "uint256" },
-      { name: "time", type: "string" },
-      { name: "appointmentValue", type: "uint256" },
-    ],
-    outputs: [{ name: "id", type: "uint256" }],
-    stateMutability: "nonpayable",
-  },
-  {
-    type: "function",
-    name: "getAppointment",
-    inputs: [{ name: "id", type: "uint256" }],
-    outputs: [
-      {
-        name: "",
-        type: "tuple",
-        components: [
-          { name: "petId", type: "uint256" },
-          { name: "date", type: "uint256" },
-          { name: "time", type: "string" },
-          { name: "appointmentValue", type: "uint256" },
-          { name: "paidValue", type: "uint256" },
-        ],
-      },
-    ],
-    stateMutability: "view",
-  },
-  {
-    type: "function",
-    name: "getPetAppointments",
-    inputs: [{ name: "petId", type: "uint256" }],
-    outputs: [{ name: "", type: "uint256[]" }],
-    stateMutability: "view",
-  },
-  {
-    type: "function",
-    name: "getAppointmentCount",
-    inputs: [],
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "view",
-  },
-  {
-    type: "function",
-    name: "payAppointmentToken",
-    inputs: [
-      { name: "id", type: "uint256" },
-      { name: "token", type: "address" },
-    ],
-    outputs: [],
-    stateMutability: "nonpayable",
-  },
-  {
-    type: "function",
-    name: "payAppointmentEth",
-    inputs: [
-      { name: "id", type: "uint256" },
-      { name: "priceFeed", type: "address" },
-    ],
-    outputs: [],
-    stateMutability: "payable",
-  },
-  {
-    type: "function",
-    name: "withdrawEth",
-    inputs: [],
-    outputs: [],
-    stateMutability: "nonpayable",
-  },
-  {
-    type: "event",
-    name: "AppointmentPaidEth",
-    inputs: [
-      { name: "appointmentId", type: "uint256", indexed: true },
-      { name: "payer", type: "address", indexed: true },
-      { name: "ethAmount", type: "uint256", indexed: false },
-      { name: "usdCents", type: "uint256", indexed: false },
-    ],
-  },
-  {
-    type: "function",
-    name: "withdrawToken",
-    inputs: [{ name: "token", type: "address" }],
-    outputs: [],
-    stateMutability: "nonpayable",
-  },
-  {
-    type: "function",
-    name: "owner",
-    inputs: [],
-    outputs: [{ name: "", type: "address" }],
-    stateMutability: "view",
-  },
-] as const;
 
 /**
  * Minimal ERC-20 ABI for USDC interactions.
