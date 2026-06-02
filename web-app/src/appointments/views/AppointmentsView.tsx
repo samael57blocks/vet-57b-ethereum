@@ -107,12 +107,11 @@ function ScheduleDialog({
     const today = new Date().toISOString().split("T")[0];
     const selectedPet = pets.find((p) => p.id === selectedPetId);
 
-    /** Watch for successful transaction → invalidate + close */
+    /** Watch for successful transaction → invalidate, then close immediately */
     useEffect(() => {
         if (txState.status === "success" && hasSubmitted) {
             queryClient.invalidateQueries({ queryKey: APPOINTMENTS_QUERY_KEY });
             setHasSubmitted(false);
-            // Auto-close after 2 seconds
             const timer = setTimeout(() => {
                 reset();
                 onClose();

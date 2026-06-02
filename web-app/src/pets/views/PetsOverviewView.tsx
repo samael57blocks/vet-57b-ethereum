@@ -68,14 +68,19 @@ export function PetsOverviewView({ pets, loading }: PetsOverviewViewProps) {
     const [hasSubmitted, setHasSubmitted] = useState(false);
 
     /**
-     * Watch for successful transaction → invalidate query + close dialog.
+     * Watch for successful transaction → close dialog immediately,
+     * then invalidate query after a short delay so the indexer has
+     * time to process the event before the refetch.
      * Gated by hasSubmitted to avoid stale success on re-open.
      */
     useEffect(() => {
         if (txState.status === "success" && hasSubmitted) {
-            queryClient.invalidateQueries({ queryKey: PET_QUERY_KEY });
             setHasSubmitted(false);
             setIsDialogOpen(false);
+            const timer = setTimeout(() => {
+                queryClient.invalidateQueries({ queryKey: PET_QUERY_KEY });
+            }, 2000);
+            return () => clearTimeout(timer);
         }
     }, [txState.status, hasSubmitted, queryClient]);
 
