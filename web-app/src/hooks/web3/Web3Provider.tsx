@@ -1,17 +1,37 @@
 import { type ReactNode } from "react";
 import { WagmiProvider, http, createConfig } from "wagmi";
-import { metaMask } from "wagmi/connectors";
+import { injected } from "wagmi/connectors";
 import { localhost } from "wagmi/chains";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 
 /**
+ * Custom getProvider that explicitly validates MetaMask.
+ * This avoids Phantom or other wallets that override window.ethereum.
+ */
+function getMetaMaskProvider() {
+  if (typeof window === "undefined") return undefined;
+  // EIP-1193: check if window.ethereum is actually MetaMask
+  if ((window as any).ethereum?.isMetaMask) {
+    return (window as any).ethereum;
+  }
+  // If MetaMask isn't the active provider, return undefined
+  // wagmi will show "No wallet found" instead of connecting to Phantom
+  return undefined;
+}
+
+/**
  * Wagmi configuration for local Hardhat network.
- * Uses explicit MetaMask connector to avoid Phantom conflicts.
+ * Uses injected connector with explicit MetaMask provider detection.
  * Replace with mainnet/testnet config for production.
  */
 const wagmiConfig = createConfig({
   chains: [localhost],
-  connectors: [metaMask()],
+  connectors: [
+    injected({
+      target: "metaMask",
+      getProvider: getMetaMaskProvider,
+    }),
+  ],
   transports: {
     [localhost.id]: http("http://127.0.0.1:8545"),
   },
