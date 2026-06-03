@@ -57,8 +57,8 @@ vi.mock("../../../hooks/web3/contract", async (importOriginal) => {
 // ---------------------------------------------------------------------------
 
 const samplePets: Pet[] = [
-    { id: "1", name: "Boby", age: 3, animalType: "Dog", caretakerName: "John", caretakerPhone: "+56912345678" },
-    { id: "2", name: "Luna", age: 2, animalType: "Cat", caretakerName: "Jane", caretakerPhone: "+56987654321" },
+    { id: "1", name: "Boby", age: 3, animalType: "Dog", owner: "0x1234567890abcdef1234567890abcdef12345678", caretakerName: "John", caretakerPhone: "+56912345678" },
+    { id: "2", name: "Luna", age: 2, animalType: "Cat", owner: "0x1234567890abcdef1234567890abcdef12345678", caretakerName: "Jane", caretakerPhone: "+56987654321" },
 ];
 
 const sampleAppointments: MedicalAppointment[] = [

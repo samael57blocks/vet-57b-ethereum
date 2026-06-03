@@ -5,6 +5,7 @@ import type { Pet, AnimalType } from "../types/pet";
 import { PetOverView } from "../components/PetOverview";
 import { useRegisterPet } from "../../hooks/web3/useRegisterPet";
 import type { AnimalTypeRaw } from "../../hooks/web3/useRegisterPet";
+import { useRegisteredOwners } from "../../hooks/web3/useRegisteredOwners";
 import { PET_QUERY_KEY } from "../hooks/usePetsOverview";
 
 /**
@@ -37,6 +38,7 @@ interface FormErrors {
     animalType?: string;
     caretakerName?: string;
     caretakerPhone?: string;
+    owner?: string;
 }
 
 /** Maps AnimalType string to contract uint8 */
@@ -52,11 +54,14 @@ const ANIMAL_TYPE_RAW: Record<AnimalType, AnimalTypeRaw> = {
  * transaction lifecycle feedback, and auto-refresh on success.
  */
 export function PetsOverviewView({ pets, loading }: PetsOverviewViewProps) {
-    const { isConnected, address } = useAccount();
+    const { isConnected } = useAccount();
     const { registerPet, txState } = useRegisterPet();
+    const { data: registeredOwners = [] } = useRegisteredOwners();
     const queryClient = useQueryClient();
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [selectedOwner, setSelectedOwner] = useState<string>("");
+    const [freeTextOwner, setFreeTextOwner] = useState<string>("");
     const [formData, setFormData] = useState<PetFormData>({
         name: "",
         age: "",
@@ -87,6 +92,8 @@ export function PetsOverviewView({ pets, loading }: PetsOverviewViewProps) {
     const openDialog = () => {
         setIsDialogOpen(true);
         setFormData({ name: "", age: "", animalType: "", caretakerName: "", caretakerPhone: "" });
+        setSelectedOwner("");
+        setFreeTextOwner("");
         setErrors({});
         setHasSubmitted(false);
     };
@@ -94,9 +101,14 @@ export function PetsOverviewView({ pets, loading }: PetsOverviewViewProps) {
     const closeDialog = () => {
         setIsDialogOpen(false);
         setFormData({ name: "", age: "", animalType: "", caretakerName: "", caretakerPhone: "" });
+        setSelectedOwner("");
+        setFreeTextOwner("");
         setErrors({});
         setHasSubmitted(false);
     };
+
+    /** Derive the actual owner address: dropdown selection or free-text fallback */
+    const ownerAddress = selectedOwner === "__custom__" ? freeTextOwner : selectedOwner;
 
     const validateForm = (): boolean => {
         const newErrors: FormErrors = {};
@@ -122,20 +134,27 @@ export function PetsOverviewView({ pets, loading }: PetsOverviewViewProps) {
             newErrors.caretakerPhone = "Caretaker phone is required";
         }
 
+        // Owner address: validate only when in dialog mode (vet-side)
+        if (!ownerAddress) {
+            newErrors.owner = "Select an owner or enter an address";
+        } else if (!/^0x[a-fA-F0-9]{40}$/.test(ownerAddress)) {
+            newErrors.owner = "Invalid Ethereum address";
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!validateForm() || !address) return;
+        if (!validateForm()) return;
 
         setHasSubmitted(true);
         registerPet({
             name: formData.name.trim(),
             age: Number(formData.age),
             animalType: ANIMAL_TYPE_RAW[formData.animalType as AnimalType],
-            owner: address,
+            owner: ownerAddress as `0x${string}`,
             caretakerName: formData.caretakerName.trim(),
             caretakerPhone: formData.caretakerPhone.trim(),
         });
@@ -198,6 +217,44 @@ export function PetsOverviewView({ pets, loading }: PetsOverviewViewProps) {
                     <option value="Cat">Cat</option>
                 </select>
                 {errors.animalType && <p className="form-error">{errors.animalType}</p>}
+            </div>
+
+            <div className="form-group">
+                <label className="form-label" htmlFor="pet-owner">
+                    Owner
+                </label>
+                <select
+                    id="pet-owner"
+                    className={`form-input ${errors.owner ? "error" : ""}`}
+                    value={selectedOwner}
+                    onChange={(e) => {
+                        setSelectedOwner(e.target.value);
+                        if (e.target.value !== "__custom__") setFreeTextOwner("");
+                        if (errors.owner) setErrors((prev) => ({ ...prev, owner: undefined }));
+                    }}
+                >
+                    <option value="">-- Select an owner --</option>
+                    {registeredOwners.map((o) => (
+                        <option key={o.address} value={o.address}>
+                            {o.name} ({o.address.slice(0, 6)}...{o.address.slice(-4)})
+                        </option>
+                    ))}
+                    <option value="__custom__">Walk-in client (enter address)</option>
+                </select>
+                {errors.owner && <p className="form-error">{errors.owner}</p>}
+                {selectedOwner === "__custom__" && (
+                    <input
+                        type="text"
+                        className={`form-input ${errors.owner ? "error" : ""}`}
+                        style={{ marginTop: "0.5rem" }}
+                        placeholder="Enter owner Ethereum address (0x...)"
+                        value={freeTextOwner}
+                        onChange={(e) => {
+                            setFreeTextOwner(e.target.value);
+                            if (errors.owner) setErrors((prev) => ({ ...prev, owner: undefined }));
+                        }}
+                    />
+                )}
             </div>
 
             <div className="form-group">
