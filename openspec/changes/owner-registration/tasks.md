@@ -25,17 +25,17 @@ Chain strategy: pending
 
 ## Phase 1: Contract (VetRegistry.sol)
 
-- [ ] 1.1 Add `OwnerInfo` struct, `_owners` mapping, `_registeredOwnerAddresses` array, `OwnerRegistered` event
-- [ ] 1.2 Add `registerAsOwner(name)` — validate 2–32 chars, re-registration updates name, emit event
-- [ ] 1.3 Add `getRegisteredOwners()` — iterate array, return `OwnerInfo[] memory`
-- [ ] 1.4 Add `getPetsByOwner(address)` — iterate `_petCount`, filter by owner, return `uint256[] memory`
+- [x] 1.1 Add `OwnerInfo` struct, `_owners` mapping, `_registeredOwnerAddresses` array, `OwnerRegistered` event
+- [x] 1.2 Add `registerAsOwner(name)` — validate 2–32 chars, re-registration updates name, emit event
+- [x] 1.3 Add `getRegisteredOwners()` — iterate array, return `OwnerInfo[] memory`
+- [x] 1.4 Add `getPetsByOwner(address)` — iterate `_petCount`, filter by owner, return `uint256[] memory`
 
 ## Phase 2: Tests (Hardhat)
 
-- [ ] 2.1 Test `registerAsOwner` — first-time, re-registration (name update), empty name revert
-- [ ] 2.2 Test `getRegisteredOwners` — no owners, single, multiple
-- [ ] 2.3 Test `getPetsByOwner` — 0/1/many pets, non-existent address
-- [ ] 2.4 Verify full existing test suite passes unchanged
+- [x] 2.1 Test `registerAsOwner` — first-time, re-registration (name update), empty name revert
+- [x] 2.2 Test `getRegisteredOwners` — no owners, single, multiple
+- [x] 2.3 Test `getPetsByOwner` — 0/1/many pets, non-existent address
+- [x] 2.4 Verify full existing test suite passes unchanged
 
 ## Phase 3: Pet Type Fix
 
