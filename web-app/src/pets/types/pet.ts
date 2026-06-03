@@ -27,4 +27,7 @@ export interface Pet {
     caretakerName: string;
     /** The phone number of the pet's caretaker */
     caretakerPhone: string;
+
+    /** The Ethereum address of the pet owner */
+    owner: string;
 };

@@ -33,6 +33,7 @@ function NavBar() {
     <nav className="navigation-bar">
       <a href="/">Pets</a>
       <a href="/appointments">Appointments</a>
+      <a href="/owner">My Pets</a>
       <div className="nav-right">
         <ConnectWallet />
       </div>

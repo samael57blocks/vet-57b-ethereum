@@ -46,6 +46,7 @@ export const Web3PetService: IPetService = {
         animalType: number;
         caretakerName: string;
         caretakerPhone: string;
+        owner: `0x${string}`;
       };
       pets.push({
         id: i.toString(),
@@ -54,6 +55,7 @@ export const Web3PetService: IPetService = {
         animalType: ANIMAL_TYPE_MAP[r.animalType] ?? "Dog",
         caretakerName: r.caretakerName,
         caretakerPhone: r.caretakerPhone,
+        owner: r.owner,
       });
     }
 
