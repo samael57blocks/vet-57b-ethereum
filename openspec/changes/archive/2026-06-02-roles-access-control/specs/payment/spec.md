@@ -1,20 +1,6 @@
-# Payment Specification
+# Delta for Payment
 
-## Purpose
-
-USDC stablecoin payment for veterinary appointments and owner token withdrawal from the VetRegistry contract.
-
-## Requirements
-
-### Requirement: Owner Initialization
-
-The contract MUST set `msg.sender` as the owner in the constructor.
-
-#### Scenario: Owner set on deploy
-
-- GIVEN a contract deployment
-- WHEN the constructor executes
-- THEN `msg.sender` is stored as `owner`
+## MODIFIED Requirements
 
 ### Requirement: Token Payment
 
@@ -61,34 +47,6 @@ The system MUST allow paying an unpaid appointment with USDC tokens. The caller 
 - AND the caller is NOT the `MedicalRecord.owner`
 - WHEN `payAppointmentToken` is called
 - THEN the call reverts with custom message
-
-### Requirement: Token Withdrawal
-
-The owner MUST be able to withdraw all USDC tokens held by the contract. Non-owners MUST NOT be able to withdraw.
-
-#### Scenario: Owner withdraws all tokens
-
-- GIVEN the contract holds 100 USDC
-- WHEN the owner calls `withdrawToken(usdcAddress)`
-- THEN the owner receives the full USDC balance
-- AND the contract's USDC balance is 0
-
-#### Scenario: Non-owner cannot withdraw
-
-- GIVEN a non-owner account
-- WHEN the account calls `withdrawToken(usdcAddress)`
-- THEN the call reverts
-
-### Requirement: ETH Rejection
-
-The contract MUST reject direct ETH transfers via `receive()`. The `payAppointmentEth()` function is the sole payable entry point. Any ETH sent directly to the contract address without calling `payAppointmentEth` MUST revert.
-(Previously: No payable entry — all ETH transfers rejected, no `receive()` or `fallback()`)
-
-#### Scenario: Direct ETH transfer reverts
-
-- GIVEN a sender sends ETH to the contract address without calling `payAppointmentEth`
-- WHEN the transfer is attempted via `receive()`
-- THEN the transaction reverts
 
 ### Requirement: ETH Payment
 
@@ -142,20 +100,3 @@ The system MUST allow paying an unpaid appointment with ETH via `payAppointmentE
 - AND the caller is NOT the `MedicalRecord.owner`
 - WHEN `payAppointmentEth` is called with sufficient ETH
 - THEN the call reverts with custom message
-
-### Requirement: ETH Withdrawal
-
-The owner MUST be able to withdraw all ETH held by the contract. Non-owners MUST NOT withdraw.
-
-#### Scenario: Owner withdraws all ETH
-
-- GIVEN the contract holds 0.1 ETH from paid appointments
-- WHEN the owner calls `withdrawEth()`
-- THEN the owner receives the full ETH balance
-- AND the contract's ETH balance is 0
-
-#### Scenario: Non-owner cannot withdraw
-
-- GIVEN a non-owner account
-- WHEN the account calls `withdrawEth()`
-- THEN the call reverts

@@ -115,7 +115,18 @@ start_hardhat() {
     fail "Hardhat node did not start in time. Check /tmp/hardhat-node.log"
 }
 
-# ── 3. Deploy contracts ───────────────────────────────────────
+# ── 3. Compile and generate ABIs ───────────────────────────────
+compile_and_generate_abis() {
+    log "Compiling contracts and generating ABIs..."
+    cd "$ROOT_DIR"
+
+    npx hardhat compile 2>&1 | tail -2
+    node scripts/generate-abi.mjs
+
+    ok "Contracts compiled and ABIs generated"
+}
+
+# ── 4. Deploy contracts ───────────────────────────────────────
 deploy_contracts() {
     log "Deploying MockERC20 (USDC) and VetRegistry..."
     cd "$ROOT_DIR"
@@ -237,6 +248,7 @@ echo ""
 reset_database
 setup_env
 start_hardhat
+compile_and_generate_abis
 deploy_contracts
 start_postgres
 start_indexer

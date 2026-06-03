@@ -8,6 +8,7 @@ export interface RegisterPetParams {
   name: string;
   age: number;
   animalType: AnimalTypeRaw;
+  owner: `0x${string}`;
   caretakerName: string;
   caretakerPhone: string;
 }
@@ -33,7 +34,7 @@ export type TxState =
  * const { registerPet, txState } = useRegisterPet();
  *
  * // When user submits the form:
- * registerPet({ name: "Boby", age: 5, animalType: 0, caretakerName: "John", caretakerPhone: "+56912345678" });
+ * registerPet({ name: "Boby", age: 5, animalType: 0, owner: "0x...", caretakerName: "John", caretakerPhone: "+56912345678" });
  * ```
  */
 export function useRegisterPet() {
@@ -68,6 +69,7 @@ export function useRegisterPet() {
         params.name,
         params.age,
         params.animalType,
+        params.owner,
         params.caretakerName,
         params.caretakerPhone,
       ],

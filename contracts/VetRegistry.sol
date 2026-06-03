@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -23,7 +23,7 @@ interface AggregatorV3Interface {
  * @title VetRegistry
  * @notice Veterinary clinic registry for managing pet medical records and appointments
  */
-contract VetRegistry is Ownable {
+contract VetRegistry is AccessControl {
     using SafeERC20 for IERC20;
     // ==================== Types ====================
 
@@ -35,6 +35,7 @@ contract VetRegistry is Ownable {
         AnimalType animalType;
         string caretakerName;
         string caretakerPhone;
+        address owner;
     }
 
     struct MedicalAppointment {
@@ -49,6 +50,7 @@ contract VetRegistry is Ownable {
 
     event MedicalRecordCreated(
         uint256 indexed id,
+        address indexed owner,
         string name,
         uint8 age,
         AnimalType animalType,
@@ -86,7 +88,12 @@ contract VetRegistry is Ownable {
     mapping(uint256 => MedicalRecord) private _medicalRecords;
     mapping(uint256 => MedicalAppointment) private _appointments;
 
-    constructor() Ownable(msg.sender) {}
+    bytes32 public constant VET_ROLE = keccak256("VET_ROLE");
+
+    constructor() {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(VET_ROLE, msg.sender);
+    }
 
     // ==================== Public Functions ====================
 
@@ -103,9 +110,10 @@ contract VetRegistry is Ownable {
         string calldata name,
         uint8 age,
         AnimalType animalType,
+        address owner,
         string calldata caretakerName,
         string calldata caretakerPhone
-    ) external returns (uint256 id) {
+    ) external onlyRole(VET_ROLE) returns (uint256 id) {
         require(bytes(name).length > 0, "Name cannot be empty");
         require(age > 0, "Age must be greater than 0");
 
@@ -117,11 +125,13 @@ contract VetRegistry is Ownable {
             age: age,
             animalType: animalType,
             caretakerName: caretakerName,
-            caretakerPhone: caretakerPhone
+            caretakerPhone: caretakerPhone,
+            owner: owner
         });
 
         emit MedicalRecordCreated(
             newId,
+            owner,
             name,
             age,
             animalType,
@@ -163,7 +173,7 @@ contract VetRegistry is Ownable {
         uint256 date,
         string calldata time,
         uint256 appointmentValue
-    ) external returns (uint256 id) {
+    ) external onlyRole(VET_ROLE) returns (uint256 id) {
         require(petId > 0 && petId <= _petCount, "Pet does not exist");
         require(date > 0, "Date must be provided");
         require(appointmentValue > 0, "Appointment value must be greater than 0");
@@ -254,6 +264,7 @@ contract VetRegistry is Ownable {
     function payAppointmentToken(uint256 id, address token) external {
         require(id > 0 && id <= _appointmentCount, "Appointment does not exist");
         require(_appointments[id].paidValue == 0, "Already paid");
+        require(msg.sender == _medicalRecords[_appointments[id].petId].owner, "Not pet owner");
 
         uint256 amount = _centsToTokenUnits(_appointments[id].appointmentValue, IERC20Metadata(token).decimals());
 
@@ -269,10 +280,10 @@ contract VetRegistry is Ownable {
      * @notice Withdraw all tokens from the contract (owner only)
      * @param token ERC20 token address
      */
-    function withdrawToken(address token) external onlyOwner {
+    function withdrawToken(address token) external onlyRole(DEFAULT_ADMIN_ROLE) {
         uint256 bal = IERC20(token).balanceOf(address(this));
         require(bal > 0, "No tokens");
-        IERC20(token).safeTransfer(owner(), bal);
+        IERC20(token).safeTransfer(msg.sender, bal);
     }
 
     /**
@@ -295,6 +306,7 @@ contract VetRegistry is Ownable {
     function payAppointmentEth(uint256 id, address priceFeed) external payable {
         require(id > 0 && id <= _appointmentCount, "Appointment does not exist");
         require(_appointments[id].paidValue == 0, "Already paid");
+        require(msg.sender == _medicalRecords[_appointments[id].petId].owner, "Not pet owner");
 
         AggregatorV3Interface feed = AggregatorV3Interface(priceFeed);
         (, int256 price, , , ) = feed.latestRoundData();
@@ -319,10 +331,10 @@ contract VetRegistry is Ownable {
     /**
      * @notice Withdraw all ETH from the contract (owner only)
      */
-    function withdrawEth() external onlyOwner {
+    function withdrawEth() external onlyRole(DEFAULT_ADMIN_ROLE) {
         uint256 balance = address(this).balance;
         require(balance > 0, "No ETH");
-        (bool sent, ) = owner().call{value: balance}("");
+        (bool sent, ) = msg.sender.call{value: balance}("");
         require(sent, "Withdraw failed");
     }
 

@@ -52,7 +52,7 @@ const ANIMAL_TYPE_RAW: Record<AnimalType, AnimalTypeRaw> = {
  * transaction lifecycle feedback, and auto-refresh on success.
  */
 export function PetsOverviewView({ pets, loading }: PetsOverviewViewProps) {
-    const { isConnected } = useAccount();
+    const { isConnected, address } = useAccount();
     const { registerPet, txState } = useRegisterPet();
     const queryClient = useQueryClient();
 
@@ -128,13 +128,14 @@ export function PetsOverviewView({ pets, loading }: PetsOverviewViewProps) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!validateForm()) return;
+        if (!validateForm() || !address) return;
 
         setHasSubmitted(true);
         registerPet({
             name: formData.name.trim(),
             age: Number(formData.age),
             animalType: ANIMAL_TYPE_RAW[formData.animalType as AnimalType],
+            owner: address,
             caretakerName: formData.caretakerName.trim(),
             caretakerPhone: formData.caretakerPhone.trim(),
         });

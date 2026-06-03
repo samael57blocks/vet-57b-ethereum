@@ -8,14 +8,21 @@ Contrato inteligente `VetRegistry` que almacena y gestiona registros médicos de
 
 ### Requirement: Medical Record Creation
 
-The system MUST allow creating a pet medical record with name, age, animal type, caretaker name, and caretaker phone.
+The system MUST allow creating a pet medical record with name, age, animal type, owner address, caretaker name, and caretaker phone. The caller MUST have VET_ROLE. The emitted `MedicalRecordCreated` event MUST include `owner` as an indexed parameter.
+(Previously: no owner field in MedicalRecord, no VET_ROLE guard, no owner in event)
 
 #### Scenario: Register a new pet
 
-- GIVEN a caller with a valid Ethereum address
-- WHEN they call `registerPet` with name, age, animalType, caretakerName, caretakerPhone
+- GIVEN a caller with VET_ROLE
+- WHEN they call `registerPet` with name, age, animalType, owner, caretakerName, caretakerPhone
 - THEN the pet is stored on-chain with a unique ID
-- AND a `MedicalRecordCreated` event is emitted with all fields
+- AND a `MedicalRecordCreated` event is emitted with all fields including `owner` indexed
+
+#### Scenario: Non-VET cannot register
+
+- GIVEN a caller without VET_ROLE
+- WHEN they call `registerPet` with valid params
+- THEN the call reverts with `AccessControlUnauthorizedAccount`
 
 ### Requirement: Medical Record Query
 
@@ -29,14 +36,22 @@ The system MUST allow reading a pet's medical record by its ID.
 
 ### Requirement: Appointment Scheduling
 
-The system MUST allow creating a medical appointment linked to an existing pet.
+The system MUST allow creating a medical appointment linked to an existing pet. The caller MUST have VET_ROLE.
+(Previously: no role guard on scheduleAppointment)
 
 #### Scenario: Schedule appointment for existing pet
 
-- GIVEN a pet with ID `0x1` exists
+- GIVEN a caller with VET_ROLE
+- AND a pet with ID `0x1` exists
 - WHEN calling `scheduleAppointment` with petId, date (unix), time string, appointmentValue
 - THEN the appointment is stored with a unique ID and `paidValue = 0`
 - AND a `MedicalAppointmentCreated` event is emitted
+
+#### Scenario: Non-VET cannot schedule
+
+- GIVEN a caller without VET_ROLE
+- WHEN they call `scheduleAppointment` with valid params
+- THEN the call reverts with `AccessControlUnauthorizedAccount`
 
 ### Requirement: Record Count Tracking
 

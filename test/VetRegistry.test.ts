@@ -3,9 +3,13 @@ import { ethers } from "hardhat";
 import { VetRegistry, VetRegistry__factory, MockERC20, MockERC20__factory, MockPriceFeed, MockPriceFeed__factory } from "../typechain-types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
+const VET_ROLE = ethers.id("VET_ROLE");
+
 describe("VetRegistry", () => {
   let registry: VetRegistry;
   let owner: SignerWithAddress;
+  let payer: SignerWithAddress;
+  let unauthorized: SignerWithAddress;
 
   const PET_1 = {
     name: "Boby",
@@ -24,7 +28,7 @@ describe("VetRegistry", () => {
   };
 
   beforeEach(async () => {
-    [owner] = await ethers.getSigners();
+    [owner, payer, unauthorized] = await ethers.getSigners();
     const factory = new VetRegistry__factory(owner);
     registry = await factory.deploy();
   });
@@ -35,47 +39,48 @@ describe("VetRegistry", () => {
         PET_1.name,
         PET_1.age,
         PET_1.animalType,
+        owner.address,
         PET_1.caretakerName,
         PET_1.caretakerPhone
       );
 
       await expect(tx)
         .to.emit(registry, "MedicalRecordCreated")
-        .withArgs(1, PET_1.name, PET_1.age, PET_1.animalType, PET_1.caretakerName, PET_1.caretakerPhone);
+        .withArgs(1, owner.address, PET_1.name, PET_1.age, PET_1.animalType, PET_1.caretakerName, PET_1.caretakerPhone);
     });
 
     it("Increments pet count after registration", async () => {
       expect(await registry.getPetCount()).to.equal(0);
 
-      await registry.registerPet(PET_1.name, PET_1.age, PET_1.animalType, PET_1.caretakerName, PET_1.caretakerPhone);
+      await registry.registerPet(PET_1.name, PET_1.age, PET_1.animalType, owner.address, PET_1.caretakerName, PET_1.caretakerPhone);
       expect(await registry.getPetCount()).to.equal(1);
 
-      await registry.registerPet(PET_2.name, PET_2.age, PET_2.animalType, PET_2.caretakerName, PET_2.caretakerPhone);
+      await registry.registerPet(PET_2.name, PET_2.age, PET_2.animalType, owner.address, PET_2.caretakerName, PET_2.caretakerPhone);
       expect(await registry.getPetCount()).to.equal(2);
     });
 
     it("Returns the assigned pet ID", async () => {
-      const tx = await registry.registerPet(PET_1.name, PET_1.age, PET_1.animalType, PET_1.caretakerName, PET_1.caretakerPhone);
+      const tx = await registry.registerPet(PET_1.name, PET_1.age, PET_1.animalType, owner.address, PET_1.caretakerName, PET_1.caretakerPhone);
       const receipt = await tx.wait();
       expect(receipt?.status).to.equal(1);
     });
 
     it("Reverts when name is empty", async () => {
       await expect(
-        registry.registerPet("", PET_1.age, PET_1.animalType, PET_1.caretakerName, PET_1.caretakerPhone)
+        registry.registerPet("", PET_1.age, PET_1.animalType, owner.address, PET_1.caretakerName, PET_1.caretakerPhone)
       ).to.be.revertedWith("Name cannot be empty");
     });
 
     it("Reverts when age is 0", async () => {
       await expect(
-        registry.registerPet(PET_1.name, 0, PET_1.animalType, PET_1.caretakerName, PET_1.caretakerPhone)
+        registry.registerPet(PET_1.name, 0, PET_1.animalType, owner.address, PET_1.caretakerName, PET_1.caretakerPhone)
       ).to.be.revertedWith("Age must be greater than 0");
     });
   });
 
   describe("Medical Record Queries", () => {
     it("Returns the correct medical record for a pet", async () => {
-      await registry.registerPet(PET_1.name, PET_1.age, PET_1.animalType, PET_1.caretakerName, PET_1.caretakerPhone);
+      await registry.registerPet(PET_1.name, PET_1.age, PET_1.animalType, owner.address, PET_1.caretakerName, PET_1.caretakerPhone);
 
       const record = await registry.getMedicalRecord(1);
       expect(record.name).to.equal(PET_1.name);
@@ -83,11 +88,12 @@ describe("VetRegistry", () => {
       expect(record.animalType).to.equal(PET_1.animalType);
       expect(record.caretakerName).to.equal(PET_1.caretakerName);
       expect(record.caretakerPhone).to.equal(PET_1.caretakerPhone);
+      expect(record.owner).to.equal(owner.address);
     });
 
     it("Returns correct records for multiple pets", async () => {
-      await registry.registerPet(PET_1.name, PET_1.age, PET_1.animalType, PET_1.caretakerName, PET_1.caretakerPhone);
-      await registry.registerPet(PET_2.name, PET_2.age, PET_2.animalType, PET_2.caretakerName, PET_2.caretakerPhone);
+      await registry.registerPet(PET_1.name, PET_1.age, PET_1.animalType, owner.address, PET_1.caretakerName, PET_1.caretakerPhone);
+      await registry.registerPet(PET_2.name, PET_2.age, PET_2.animalType, owner.address, PET_2.caretakerName, PET_2.caretakerPhone);
 
       const record1 = await registry.getMedicalRecord(1);
       expect(record1.name).to.equal(PET_1.name);
@@ -109,7 +115,7 @@ describe("VetRegistry", () => {
     };
 
     beforeEach(async () => {
-      await registry.registerPet(PET_1.name, PET_1.age, PET_1.animalType, PET_1.caretakerName, PET_1.caretakerPhone);
+      await registry.registerPet(PET_1.name, PET_1.age, PET_1.animalType, owner.address, PET_1.caretakerName, PET_1.caretakerPhone);
     });
 
     it("Schedules an appointment and emits MedicalAppointmentCreated event", async () => {
@@ -148,8 +154,8 @@ describe("VetRegistry", () => {
 
     beforeEach(async () => {
       // Register two pets for view function tests
-      await registry.registerPet(PET_1.name, PET_1.age, PET_1.animalType, PET_1.caretakerName, PET_1.caretakerPhone);
-      await registry.registerPet(PET_2.name, PET_2.age, PET_2.animalType, PET_2.caretakerName, PET_2.caretakerPhone);
+      await registry.registerPet(PET_1.name, PET_1.age, PET_1.animalType, owner.address, PET_1.caretakerName, PET_1.caretakerPhone);
+      await registry.registerPet(PET_2.name, PET_2.age, PET_2.animalType, owner.address, PET_2.caretakerName, PET_2.caretakerPhone);
     });
 
     it("should return appointment by id", async () => {
@@ -194,6 +200,82 @@ describe("VetRegistry", () => {
     });
   });
 
+  describe("Access Control", () => {
+    it("should revert when non-VET calls registerPet", async () => {
+      await expect(
+        registry.connect(payer).registerPet(PET_1.name, PET_1.age, PET_1.animalType, owner.address, PET_1.caretakerName, PET_1.caretakerPhone)
+      ).to.be.revertedWithCustomError(registry, "AccessControlUnauthorizedAccount")
+        .withArgs(payer.address, VET_ROLE);
+    });
+
+    it("should revert when non-VET calls scheduleAppointment", async () => {
+      // Register a pet first as owner (deployer has VET_ROLE)
+      await registry.registerPet(PET_1.name, PET_1.age, PET_1.animalType, owner.address, PET_1.caretakerName, PET_1.caretakerPhone);
+
+      await expect(
+        registry.connect(payer).scheduleAppointment(1, 1715338800, "10:30", 5000)
+      ).to.be.revertedWithCustomError(registry, "AccessControlUnauthorizedAccount")
+        .withArgs(payer.address, VET_ROLE);
+    });
+  });
+
+  describe("Owner-Gated Payments", () => {
+    let usdc: MockERC20;
+    let petOwner: SignerWithAddress;
+
+    const GATED_APPOINTMENT = {
+      date: 1715338800,
+      time: "10:30",
+      appointmentValue: 5000, // $50 in cents
+    };
+
+    beforeEach(async () => {
+      petOwner = payer; // alias for clarity
+
+      // Deploy MockERC20 (USDC with 6 decimals)
+      const usdcFactory = new MockERC20__factory(owner);
+      usdc = await usdcFactory.deploy("USDC", "USDC", 6, ethers.parseUnits("1000000", 6));
+
+      // Register a pet with petOwner as the MedicalRecord.owner
+      await registry.registerPet(
+        PET_1.name,
+        PET_1.age,
+        PET_1.animalType,
+        petOwner.address,  // <-- petOwner is the recorded owner
+        PET_1.caretakerName,
+        PET_1.caretakerPhone
+      );
+      await registry.scheduleAppointment(
+        1,
+        GATED_APPOINTMENT.date,
+        GATED_APPOINTMENT.time,
+        GATED_APPOINTMENT.appointmentValue
+      );
+
+      // Give petOwner USDC and approve registry to spend
+      await usdc.connect(owner).transfer(petOwner.address, ethers.parseUnits("1000", 6));
+      await usdc.connect(petOwner).approve(registry.target, ethers.parseUnits("1000", 6));
+    });
+
+    it("should revert when non-owner pays with token", async () => {
+      await expect(
+        registry.connect(unauthorized).payAppointmentToken(1, await usdc.getAddress())
+      ).to.be.revertedWith("Not pet owner");
+    });
+
+    it("should revert when non-owner pays with ETH", async () => {
+      const feedFactory = new MockPriceFeed__factory(owner);
+      const priceFeed = await feedFactory.deploy();
+      const priceFeedAddress = await priceFeed.getAddress();
+
+      await expect(
+        registry.connect(unauthorized).payAppointmentEth(1, priceFeedAddress, {
+          value: ethers.parseEther("0.025"),
+        })
+      ).to.be.revertedWith("Not pet owner");
+    });
+  });
+
   describe("Payment", () => {
     let usdc: MockERC20;
     let payer: SignerWithAddress;
@@ -211,15 +293,16 @@ describe("VetRegistry", () => {
       const usdcFactory = new MockERC20__factory(owner);
       usdc = await usdcFactory.deploy("USDC", "USDC", 6, ethers.parseUnits("1000000", 6));
 
-      // Register a pet and schedule an appointment
-      await registry.connect(owner).registerPet(
+      // Register a pet with payer as the MedicalRecord.owner
+      await registry.registerPet(
         PET_1.name,
         PET_1.age,
         PET_1.animalType,
+        payer.address,  // <-- payer IS the pet owner
         PET_1.caretakerName,
         PET_1.caretakerPhone
       );
-      await registry.connect(owner).scheduleAppointment(
+      await registry.scheduleAppointment(
         1,
         PAYMENT_APPOINTMENT.date,
         PAYMENT_APPOINTMENT.time,
@@ -276,24 +359,24 @@ describe("VetRegistry", () => {
       ).to.be.revertedWithCustomError(registry, "SafeERC20FailedOperation");
     });
 
-    it("should allow owner to withdraw tokens", async () => {
+    it("should allow admin to withdraw tokens", async () => {
       await registry.connect(payer).payAppointmentToken(1, await usdc.getAddress());
 
       const contractBalanceBefore = await usdc.balanceOf(registry.target);
       expect(contractBalanceBefore).to.equal(ethers.parseUnits("50", 6));
 
-      const ownerBalanceBefore = await usdc.balanceOf(owner.address);
+      const adminBalanceBefore = await usdc.balanceOf(owner.address);
 
       await registry.connect(owner).withdrawToken(await usdc.getAddress());
 
       expect(await usdc.balanceOf(registry.target)).to.equal(0);
-      expect(await usdc.balanceOf(owner.address)).to.equal(ownerBalanceBefore + ethers.parseUnits("50", 6));
+      expect(await usdc.balanceOf(owner.address)).to.equal(adminBalanceBefore + ethers.parseUnits("50", 6));
     });
 
-    it("should revert when non-owner tries to withdraw", async () => {
+    it("should revert when non-admin tries to withdraw", async () => {
       await expect(
         registry.connect(payer).withdrawToken(await usdc.getAddress())
-      ).to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount");
+      ).to.be.revertedWithCustomError(registry, "AccessControlUnauthorizedAccount");
     });
 
     it("should reject direct ETH transfers", async () => {
@@ -337,19 +420,20 @@ describe("VetRegistry", () => {
       priceFeed = await feedFactory.deploy();
       priceFeedAddress = await priceFeed.getAddress();
 
-      // Register a pet and schedule an appointment
-      await registry.connect(owner).registerPet(
+      // Register a pet with payer as the MedicalRecord.owner
+      await registry.registerPet(
         PET_1.name,
         PET_1.age,
         PET_1.animalType,
+        payer.address,  // <-- payer IS the pet owner
         PET_1.caretakerName,
-        PET_1.caretakerPhone,
+        PET_1.caretakerPhone
       );
-      await registry.connect(owner).scheduleAppointment(
+      await registry.scheduleAppointment(
         1,
         ETH_APPOINTMENT.date,
         ETH_APPOINTMENT.time,
-        ETH_APPOINTMENT.appointmentValue,
+        ETH_APPOINTMENT.appointmentValue
       );
     });
 
@@ -427,7 +511,7 @@ describe("VetRegistry", () => {
       ).to.be.revertedWith("Invalid price");
     });
 
-    it("should allow owner to withdraw ETH", async () => {
+    it("should allow admin to withdraw ETH", async () => {
       // Make a payment so the contract has ETH
       await registry.connect(payer).payAppointmentEth(1, priceFeedAddress, {
         value: EXPECTED_ETH,
@@ -436,7 +520,7 @@ describe("VetRegistry", () => {
       const contractBalanceBefore = await ethers.provider.getBalance(registry.target);
       expect(contractBalanceBefore).to.equal(EXPECTED_ETH);
 
-      const ownerBalanceBefore = await ethers.provider.getBalance(owner.address);
+      const adminBalanceBefore = await ethers.provider.getBalance(owner.address);
 
       const tx = await registry.connect(owner).withdrawEth();
       const receipt = await tx.wait();
@@ -444,14 +528,41 @@ describe("VetRegistry", () => {
 
       expect(await ethers.provider.getBalance(registry.target)).to.equal(0);
       expect(await ethers.provider.getBalance(owner.address)).to.equal(
-        ownerBalanceBefore + EXPECTED_ETH - gasCost,
+        adminBalanceBefore + EXPECTED_ETH - gasCost,
       );
     });
 
-    it("should revert when non-owner tries to withdraw ETH", async () => {
+    it("should revert when non-admin tries to withdraw ETH", async () => {
       await expect(
         registry.connect(payer).withdrawEth(),
-      ).to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount");
+      ).to.be.revertedWithCustomError(registry, "AccessControlUnauthorizedAccount");
+    });
+  });
+
+  describe("Admin Role Management", () => {
+    it("should allow admin to grant VET_ROLE", async () => {
+      await registry.connect(owner).grantRole(VET_ROLE, payer.address);
+      expect(await registry.hasRole(VET_ROLE, payer.address)).to.equal(true);
+    });
+
+    it("should allow admin to revoke VET_ROLE", async () => {
+      await registry.connect(owner).grantRole(VET_ROLE, payer.address);
+      expect(await registry.hasRole(VET_ROLE, payer.address)).to.equal(true);
+
+      await registry.connect(owner).revokeRole(VET_ROLE, payer.address);
+      expect(await registry.hasRole(VET_ROLE, payer.address)).to.equal(false);
+    });
+
+    it("should revert when non-admin tries to grant VET_ROLE", async () => {
+      await expect(
+        registry.connect(payer).grantRole(VET_ROLE, unauthorized.address)
+      ).to.be.revertedWithCustomError(registry, "AccessControlUnauthorizedAccount");
+    });
+
+    it("should revert when non-admin tries to revoke VET_ROLE", async () => {
+      await expect(
+        registry.connect(payer).revokeRole(VET_ROLE, owner.address)
+      ).to.be.revertedWithCustomError(registry, "AccessControlUnauthorizedAccount");
     });
   });
 });

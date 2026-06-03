@@ -10,7 +10,7 @@ import { PET_QUERY_KEY } from "../../hooks/usePetsOverview";
 let mockIsConnected = true;
 
 vi.mock("wagmi", () => ({
-  useAccount: () => ({ isConnected: mockIsConnected }),
+  useAccount: () => ({ isConnected: mockIsConnected, address: "0x1234567890abcdef1234567890abcdef12345678" }),
 }));
 
 let currentTxState: Record<string, unknown> = { status: "idle" };
@@ -142,6 +142,7 @@ describe("PetsOverviewView", () => {
         name: "Boby",
         age: 3,
         animalType: 0,
+        owner: "0x1234567890abcdef1234567890abcdef12345678",
         caretakerName: "John",
         caretakerPhone: "+56912345678",
       });
