@@ -15,6 +15,13 @@ export const VET_REGISTRY_ADDRESS =
   import.meta.env.VITE_CONTRACT_ADDRESS ?? "0x0000000000000000000000000000000000000000";
 
 /**
+ * Local vet wallet for mock mode (Hardhat account #0 / deployer).
+ * Set VITE_VET_ADDRESS in .env — dev.sh writes this on each run.
+ */
+export const VET_ADDRESS =
+  import.meta.env.VITE_VET_ADDRESS as `0x${string}` | undefined;
+
+/**
  * Minimal ERC-20 ABI for USDC interactions.
  * Only includes functions needed by the payment flow.
  */

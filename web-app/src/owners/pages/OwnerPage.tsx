@@ -1,5 +1,5 @@
 import { useAccount } from "wagmi";
-import { useRegisteredOwners } from "../../hooks/web3/useRegisteredOwners";
+import { useIsRegisteredOwner } from "../../hooks/web3/useIsRegisteredOwner";
 import { OwnerRegistrationView } from "../views/OwnerRegistrationView";
 import { OwnerDashboardView } from "../views/OwnerDashboardView";
 
@@ -13,9 +13,8 @@ import { OwnerDashboardView } from "../views/OwnerDashboardView";
  */
 export function OwnerPage() {
   const { isConnected, address } = useAccount();
-  const { data: owners, isLoading, error } = useRegisteredOwners();
+  const { isRegisteredOwner, isLoading, error } = useIsRegisteredOwner();
 
-  // Not connected
   if (!isConnected) {
     return (
       <main className="main-content">
@@ -27,7 +26,6 @@ export function OwnerPage() {
     );
   }
 
-  // Loading owners list
   if (isLoading) {
     return (
       <main className="main-content">
@@ -39,24 +37,18 @@ export function OwnerPage() {
     );
   }
 
-  // Error loading owners
   if (error) {
     return (
       <main className="main-content">
         <div className="page-header">
           <h1 className="page-title">My Pets</h1>
         </div>
-        <p className="tx-error">Error: {(error as Error).message}</p>
+        <p className="tx-error">Error: {error.message}</p>
       </main>
     );
   }
 
-  // Check if the connected wallet is registered
-  const isRegistered = owners.some(
-    (o) => o.address.toLowerCase() === address?.toLowerCase(),
-  );
-
-  if (isRegistered && address) {
+  if (isRegisteredOwner && address) {
     return <OwnerDashboardView ownerAddress={address as `0x${string}`} />;
   }
 
