@@ -10,7 +10,11 @@ import { PET_QUERY_KEY } from "../../hooks/usePetsOverview";
 let mockIsConnected = true;
 
 vi.mock("wagmi", () => ({
-  useAccount: () => ({ isConnected: mockIsConnected, address: "0x1234567890abcdef1234567890abcdef12345678" }),
+  useAccount: () => ({
+    isConnected: mockIsConnected,
+    address: "0x1234567890abcdef1234567890abcdef12345678",
+  }),
+  useReadContract: () => ({ data: [], isLoading: false }),
 }));
 
 let currentTxState: Record<string, unknown> = { status: "idle" };
