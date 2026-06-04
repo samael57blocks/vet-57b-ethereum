@@ -151,7 +151,7 @@ func mustABIType(t string) abi.Type {
 }
 
 // makeMedicalRecordCreatedLog creates a test log for MedicalRecordCreated.
-func makeMedicalRecordCreatedLog(id *big.Int, name string, age uint8, animalType *big.Int, caretakerName, caretakerPhone string) types.Log {
+func makeMedicalRecordCreatedLog(id *big.Int, owner common.Address, name string, age uint8, animalType *big.Int, caretakerName, caretakerPhone string) types.Log {
 	args := abi.Arguments{
 		{Type: mustABIType("string"), Name: "name"},
 		{Type: mustABIType("uint8"), Name: "age"},
@@ -164,7 +164,7 @@ func makeMedicalRecordCreatedLog(id *big.Int, name string, age uint8, animalType
 		panic("makeMedicalRecordCreatedLog pack: " + err.Error())
 	}
 	return types.Log{
-		Topics:      []common.Hash{ethclient.MedicalRecordCreatedSig, common.BigToHash(id)},
+		Topics:      []common.Hash{ethclient.MedicalRecordCreatedSig, common.BigToHash(id), common.BytesToHash(owner.Bytes())},
 		Data:        data,
 		BlockNumber: 100,
 		TxHash:      common.HexToHash("0xabc"),
@@ -250,8 +250,10 @@ func TestDecodeAndUpsert_MedicalRecordCreated(t *testing.T) {
 		client: &mockClient{},
 	}
 
+	owner := common.HexToAddress("0x70997970C51812dc3A010C7d01b50e0d17dc79C8")
 	log := makeMedicalRecordCreatedLog(
 		big.NewInt(1),
+		owner,
 		"Buddy",
 		3,
 		big.NewInt(0), // Dog
@@ -296,8 +298,10 @@ func TestDecodeAndUpsert_MedicalRecordCreated_Cat(t *testing.T) {
 		client: &mockClient{},
 	}
 
+	owner := common.HexToAddress("0x70997970C51812dc3A010C7d01b50e0d17dc79C8")
 	log := makeMedicalRecordCreatedLog(
 		big.NewInt(2),
+		owner,
 		"Whiskers",
 		7,
 		big.NewInt(1), // Cat

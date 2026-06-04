@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRegisterOwner } from "../../hooks/web3/useRegisterOwner";
+import {
+  useRegisteredOwners,
+  REGISTERED_OWNERS_QUERY_KEY,
+} from "../../hooks/web3/useRegisteredOwners";
 
 /**
  * OwnerRegistrationView Component
@@ -10,6 +14,7 @@ import { useRegisterOwner } from "../../hooks/web3/useRegisterOwner";
  */
 export function OwnerRegistrationView() {
   const { registerOwner, txState } = useRegisterOwner();
+  const { refetch } = useRegisteredOwners();
   const queryClient = useQueryClient();
 
   const [name, setName] = useState("");
@@ -17,16 +22,15 @@ export function OwnerRegistrationView() {
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
   /**
-   * Watch for successful transaction → invalidate read queries so the
-   * owner dashboard appears without manual refresh.
+   * On success, refetch on-chain owners so OwnerPage can switch to the dashboard.
+   * Do not reset hasSubmitted here — that re-shows the form before the parent re-renders.
    */
   useEffect(() => {
     if (txState.status === "success" && hasSubmitted) {
-      setHasSubmitted(false);
-      // Invalidate all wagmi queries so useRegisteredOwners refetches
-      queryClient.invalidateQueries();
+      void refetch();
+      queryClient.invalidateQueries({ queryKey: [...REGISTERED_OWNERS_QUERY_KEY] });
     }
-  }, [txState.status, hasSubmitted, queryClient]);
+  }, [txState.status, hasSubmitted, queryClient, refetch]);
 
   const validate = (): boolean => {
     const trimmed = name.trim();
@@ -43,6 +47,15 @@ export function OwnerRegistrationView() {
     if (!validate()) return;
 
     setHasSubmitted(true);
+    registerOwner(name.trim());
+  };
+
+  const handleRetry = () => {
+    setHasSubmitted(true);
+    if (!validate()) {
+      setHasSubmitted(false);
+      return;
+    }
     registerOwner(name.trim());
   };
 
@@ -99,13 +112,19 @@ export function OwnerRegistrationView() {
         return (
           <div className="tx-feedback">
             <p>Owner registered successfully!</p>
+            <p style={{ marginTop: "0.5rem" }}>Loading your dashboard...</p>
           </div>
         );
       case "error":
         return (
           <div className="tx-feedback">
             <p className="tx-error">Error: {txState.error.message}</p>
-            <button className="btn-primary" onClick={handleSubmit} style={{ marginTop: "1rem" }}>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={handleRetry}
+              style={{ marginTop: "1rem" }}
+            >
               Try Again
             </button>
           </div>
@@ -125,9 +144,7 @@ export function OwnerRegistrationView() {
       </p>
 
       <div style={{ maxWidth: "480px" }}>
-        {!hasSubmitted
-          ? renderForm()
-          : renderTxFeedback()}
+        {!hasSubmitted ? renderForm() : renderTxFeedback()}
       </div>
     </main>
   );
