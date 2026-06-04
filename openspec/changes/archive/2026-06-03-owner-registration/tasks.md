@@ -39,29 +39,29 @@ Chain strategy: pending
 
 ## Phase 3: Pet Type Fix
 
-- [ ] 3.1 Add `owner: string` to `Pet` interface in `pets/types/pet.ts`
-- [ ] 3.2 Add `owner` to mock entries in `pets/services/mock/petService.ts`
-- [ ] 3.3 Map `r.owner` in `pets/services/web3/petService.ts` (stop destructuring it out)
-- [ ] 3.4 Add `owner` to `PetResponse` + mapper in `pets/services/petService.ts`
+- [x] 3.1 Add `owner: string` to `Pet` interface in `pets/types/pet.ts`
+- [x] 3.2 Add `owner` to mock entries in `pets/services/mock/petService.ts`
+- [x] 3.3 Map `r.owner` in `pets/services/web3/petService.ts` (stop destructuring it out)
+- [x] 3.4 Add `owner` to `PetResponse` + mapper in `pets/services/petService.ts`
 
 ## Phase 4: Owner Hooks & Types
 
-- [ ] 4.1 Create `owners/types/owner.ts` — `Owner { address: string; name: string }`
-- [ ] 4.2 Create `hooks/web3/useRegisterOwner.ts` — write hook, TxState pattern
-- [ ] 4.3 Create `hooks/web3/useRegisteredOwners.ts` — read hook via `useReadContract`
-- [ ] 4.4 Create `hooks/web3/usePetsByOwner.ts` — read hook via `useReadContract`
+- [x] 4.1 Create `owners/types/owner.ts` — `Owner { address: string; name: string }`
+- [x] 4.2 Create `hooks/web3/useRegisterOwner.ts` — write hook, TxState pattern
+- [x] 4.3 Create `hooks/web3/useRegisteredOwners.ts` — read hook via `useReadContract`
+- [x] 4.4 Create `hooks/web3/usePetsByOwner.ts` — read hook via `useReadContract`
 
 ## Phase 5: Owner UI
 
-- [ ] 5.1 Create `owners/views/OwnerRegistrationView.tsx` — name form + TxState feedback
-- [ ] 5.2 Create `owners/views/OwnerDashboardView.tsx` — filtered pets + unpaid appointments + Pay button
-- [ ] 5.3 Create `owners/pages/OwnerPage.tsx` — `useAccount()` → registered? Dashboard : RegistrationForm
+- [x] 5.1 Create `owners/views/OwnerRegistrationView.tsx` — name form + TxState feedback
+- [x] 5.2 Create `owners/views/OwnerDashboardView.tsx` — filtered pets + unpaid appointments + Pay button
+- [x] 5.3 Create `owners/pages/OwnerPage.tsx` — `useAccount()` → registered? Dashboard : RegistrationForm
 
 ## Phase 6: Vet-Side Dropdown (PetsOverviewView)
 
-- [ ] 6.1 Add `useRegisteredOwners()` call; replace hidden address input with dropdown of registered owners + free-text fallback address field
+- [x] 6.1 Add `useRegisteredOwners()` call; replace hidden address input with dropdown of registered owners + free-text fallback address field
 
 ## Phase 7: Navigation
 
-- [ ] 7.1 `NavBar.tsx` — add "My Pets" link to `/owner`
-- [ ] 7.2 `router.tsx` — add `{ path: "/owner", element: <OwnerPage /> }`
+- [x] 7.1 `NavBar.tsx` — add "My Pets" link to `/owner`
+- [x] 7.2 `router.tsx` — add `{ path: "/owner", element: <OwnerPage /> }`

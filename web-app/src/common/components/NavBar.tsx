@@ -1,4 +1,5 @@
 import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { useIsVet } from "../../hooks/web3/useIsVet";
 
 function ConnectWallet() {
   const { address, isConnected } = useAccount();
@@ -29,10 +30,21 @@ function ConnectWallet() {
 }
 
 function NavBar() {
+  const { isConnected } = useAccount();
+  const { isVet, isLoading } = useIsVet();
+
+  const showVetLinks = isConnected && !isLoading && isVet;
+  const showOwnerLink = isConnected && !isLoading && !isVet;
+
   return (
     <nav className="navigation-bar">
-      <a href="/">Pets</a>
-      <a href="/appointments">Appointments</a>
+      {showVetLinks && (
+        <>
+          <a href="/">Pets</a>
+          <a href="/appointments">Appointments</a>
+        </>
+      )}
+      {showOwnerLink && <a href="/owner">My Pets</a>}
       <div className="nav-right">
         <ConnectWallet />
       </div>

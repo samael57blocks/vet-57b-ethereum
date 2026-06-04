@@ -41,16 +41,23 @@ async function main() {
   // 4. Seed data — create pets and appointments for local dev
   // -------------------------------------------------------------------
   console.log("\nSeeding pets...");
-  const [owner] = await ethers.getSigners();
+  const [, owner, payer] = await ethers.getSigners();
 
   const pets = [
-    { name: "Max", age: 3, animalType: 0, caretaker: "Alice Johnson", phone: "+1-555-0101" },
-    { name: "Luna", age: 2, animalType: 1, caretaker: "Bob Smith", phone: "+1-555-0202" },
-    { name: "Rocky", age: 5, animalType: 0, caretaker: "Carol Davis", phone: "+1-555-0303" },
+    { name: "Max", age: 3, animalType: 0, ownerAddress: owner.address, caretakerName: "Alice Johnson", caretakerPhone: "+1-555-0101" },
+    { name: "Luna", age: 2, animalType: 1, ownerAddress: owner.address, caretakerName: "Bob Smith", caretakerPhone: "+1-555-0202" },
+    { name: "Rocky", age: 5, animalType: 0, ownerAddress: payer.address, caretakerName: "Carol Davis", caretakerPhone: "+1-555-0303" },
   ];
 
   for (const pet of pets) {
-    const tx = await contract.registerPet(pet.name, pet.age, pet.animalType, pet.caretaker, pet.phone);
+    const tx = await contract.registerPet(
+      pet.name,
+      pet.age,
+      pet.animalType,
+      pet.ownerAddress,
+      pet.caretakerName,
+      pet.caretakerPhone
+    );
     await tx.wait();
     console.log(`  Pet registered: ${pet.name} (${["Dog", "Cat"][pet.animalType]})`);
   }

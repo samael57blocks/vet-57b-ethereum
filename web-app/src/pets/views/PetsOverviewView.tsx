@@ -1,10 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAccount } from "wagmi";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Pet, AnimalType } from "../types/pet";
 import { PetOverView } from "../components/PetOverview";
 import { useRegisterPet } from "../../hooks/web3/useRegisterPet";
 import type { AnimalTypeRaw } from "../../hooks/web3/useRegisterPet";
+import {
+    useRegisteredOwners,
+    REGISTERED_OWNERS_QUERY_KEY,
+} from "../../hooks/web3/useRegisteredOwners";
 import { PET_QUERY_KEY } from "../hooks/usePetsOverview";
 
 /**
@@ -37,6 +41,7 @@ interface FormErrors {
     animalType?: string;
     caretakerName?: string;
     caretakerPhone?: string;
+    owner?: string;
 }
 
 /** Maps AnimalType string to contract uint8 */
@@ -52,11 +57,19 @@ const ANIMAL_TYPE_RAW: Record<AnimalType, AnimalTypeRaw> = {
  * transaction lifecycle feedback, and auto-refresh on success.
  */
 export function PetsOverviewView({ pets, loading }: PetsOverviewViewProps) {
-    const { isConnected, address } = useAccount();
+    const { isConnected } = useAccount();
     const { registerPet, txState } = useRegisterPet();
+    const {
+        data: registeredOwners = [],
+        isLoading: ownersLoading,
+        isError: ownersError,
+        refetch: refetchOwners,
+    } = useRegisteredOwners();
     const queryClient = useQueryClient();
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [selectedOwner, setSelectedOwner] = useState<string>("");
+    const [freeTextOwner, setFreeTextOwner] = useState<string>("");
     const [formData, setFormData] = useState<PetFormData>({
         name: "",
         age: "",
@@ -66,37 +79,64 @@ export function PetsOverviewView({ pets, loading }: PetsOverviewViewProps) {
     });
     const [errors, setErrors] = useState<FormErrors>({});
     const [hasSubmitted, setHasSubmitted] = useState(false);
+    /** Tracks submit intent without re-triggering the success effect cleanup. */
+    const awaitingSuccessRef = useRef(false);
 
     /**
-     * Watch for successful transaction → close dialog immediately,
-     * then invalidate query after a short delay so the indexer has
-     * time to process the event before the refetch.
-     * Gated by hasSubmitted to avoid stale success on re-open.
+     * On successful tx: close dialog, then invalidate after a delay so the
+     * indexer can process MedicalRecordCreated before refetch.
      */
     useEffect(() => {
-        if (txState.status === "success" && hasSubmitted) {
-            setHasSubmitted(false);
-            setIsDialogOpen(false);
-            const timer = setTimeout(() => {
-                queryClient.invalidateQueries({ queryKey: PET_QUERY_KEY });
-            }, 2000);
-            return () => clearTimeout(timer);
+        if (txState.status !== "success" || !awaitingSuccessRef.current) {
+            return;
         }
-    }, [txState.status, hasSubmitted, queryClient]);
+        setHasSubmitted(false);
+        setIsDialogOpen(false);
+        const timer = setTimeout(() => {
+            awaitingSuccessRef.current = false;
+            queryClient.invalidateQueries({ queryKey: PET_QUERY_KEY });
+            queryClient.invalidateQueries({
+                queryKey: REGISTERED_OWNERS_QUERY_KEY,
+            });
+        }, 2000);
+        return () => clearTimeout(timer);
+    }, [txState.status, queryClient]);
 
     const openDialog = () => {
         setIsDialogOpen(true);
         setFormData({ name: "", age: "", animalType: "", caretakerName: "", caretakerPhone: "" });
+        setSelectedOwner("");
+        setFreeTextOwner("");
         setErrors({});
         setHasSubmitted(false);
+        awaitingSuccessRef.current = false;
+        void refetchOwners();
     };
+
+    /** When no owners are on-chain yet, default to walk-in address entry. */
+    useEffect(() => {
+        if (
+            isDialogOpen &&
+            !ownersLoading &&
+            registeredOwners.length === 0 &&
+            selectedOwner === ""
+        ) {
+            setSelectedOwner("__custom__");
+        }
+    }, [isDialogOpen, ownersLoading, registeredOwners.length, selectedOwner]);
 
     const closeDialog = () => {
         setIsDialogOpen(false);
         setFormData({ name: "", age: "", animalType: "", caretakerName: "", caretakerPhone: "" });
+        setSelectedOwner("");
+        setFreeTextOwner("");
         setErrors({});
         setHasSubmitted(false);
+        awaitingSuccessRef.current = false;
     };
+
+    /** Derive the actual owner address: dropdown selection or free-text fallback */
+    const ownerAddress = selectedOwner === "__custom__" ? freeTextOwner : selectedOwner;
 
     const validateForm = (): boolean => {
         const newErrors: FormErrors = {};
@@ -122,20 +162,28 @@ export function PetsOverviewView({ pets, loading }: PetsOverviewViewProps) {
             newErrors.caretakerPhone = "Caretaker phone is required";
         }
 
+        // Owner address: validate only when in dialog mode (vet-side)
+        if (!ownerAddress) {
+            newErrors.owner = "Select an owner or enter an address";
+        } else if (!/^0x[a-fA-F0-9]{40}$/.test(ownerAddress)) {
+            newErrors.owner = "Invalid Ethereum address";
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!validateForm() || !address) return;
+        if (!validateForm()) return;
 
         setHasSubmitted(true);
+        awaitingSuccessRef.current = true;
         registerPet({
             name: formData.name.trim(),
             age: Number(formData.age),
             animalType: ANIMAL_TYPE_RAW[formData.animalType as AnimalType],
-            owner: address,
+            owner: ownerAddress as `0x${string}`,
             caretakerName: formData.caretakerName.trim(),
             caretakerPhone: formData.caretakerPhone.trim(),
         });
@@ -198,6 +246,63 @@ export function PetsOverviewView({ pets, loading }: PetsOverviewViewProps) {
                     <option value="Cat">Cat</option>
                 </select>
                 {errors.animalType && <p className="form-error">{errors.animalType}</p>}
+            </div>
+
+            <div className="form-group">
+                <label className="form-label" htmlFor="pet-owner">
+                    Owner
+                </label>
+                <select
+                    id="pet-owner"
+                    className={`form-input ${errors.owner ? "error" : ""}`}
+                    value={selectedOwner}
+                    disabled={ownersLoading}
+                    onChange={(e) => {
+                        setSelectedOwner(e.target.value);
+                        if (e.target.value !== "__custom__") setFreeTextOwner("");
+                        if (errors.owner) setErrors((prev) => ({ ...prev, owner: undefined }));
+                    }}
+                >
+                    <option value="">
+                        {ownersLoading
+                            ? "Loading owners..."
+                            : "-- Select an owner --"}
+                    </option>
+                    {registeredOwners.map((o) => (
+                        <option key={o.address} value={o.address}>
+                            {o.name} ({o.address.slice(0, 6)}...{o.address.slice(-4)})
+                        </option>
+                    ))}
+                    <option value="__custom__">Walk-in client (enter address)</option>
+                </select>
+                {ownersError && (
+                    <p className="form-error">
+                        Could not load registered owners. Use walk-in and enter a
+                        0x address, or check your contract address in .env.
+                    </p>
+                )}
+                {!ownersLoading &&
+                    !ownersError &&
+                    registeredOwners.length === 0 && (
+                        <p className="form-hint">
+                            No owners registered on-chain yet. Enter the owner wallet
+                            below (e.g. Hardhat account #1).
+                        </p>
+                    )}
+                {errors.owner && <p className="form-error">{errors.owner}</p>}
+                {selectedOwner === "__custom__" && (
+                    <input
+                        type="text"
+                        className={`form-input ${errors.owner ? "error" : ""}`}
+                        style={{ marginTop: "0.5rem" }}
+                        placeholder="Enter owner Ethereum address (0x...)"
+                        value={freeTextOwner}
+                        onChange={(e) => {
+                            setFreeTextOwner(e.target.value);
+                            if (errors.owner) setErrors((prev) => ({ ...prev, owner: undefined }));
+                        }}
+                    />
+                )}
             </div>
 
             <div className="form-group">
@@ -269,8 +374,15 @@ export function PetsOverviewView({ pets, loading }: PetsOverviewViewProps) {
                 return (
                     <div className="tx-feedback">
                         <p className="tx-error">Error: {txState.error.message}</p>
-                        <button className="btn-primary" onClick={handleSubmit}>
-                            Try Again
+                        <button
+                            type="button"
+                            className="btn-primary"
+                            onClick={() => {
+                                setHasSubmitted(false);
+                                awaitingSuccessRef.current = false;
+                            }}
+                        >
+                            Back to form
                         </button>
                     </div>
                 );
