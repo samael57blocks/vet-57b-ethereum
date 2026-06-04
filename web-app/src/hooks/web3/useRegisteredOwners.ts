@@ -1,22 +1,60 @@
+import { readContractQueryKey } from "@wagmi/core/query";
 import { useReadContract } from "wagmi";
 import { VET_REGISTRY_ADDRESS, vetRegistryABI } from "./contract";
 import type { Owner } from "../../owners/types/owner";
 
-/**
- * Maps raw OwnerInfo tuples from the contract to the frontend Owner type.
- *
- * The contract returns OwnerInfo[] where each entry is a tuple:
- *   [wallet: address, name: string, registered: bool]
- */
-function mapOwnerInfo(raw: unknown): Owner[] {
-  if (!Array.isArray(raw)) return [];
-  return raw.map((entry: unknown) => {
-    const tuple = entry as [string, string, boolean];
+/** Params shared by the hook and wagmi query invalidation. */
+const registeredOwnersReadConfig = {
+  address: VET_REGISTRY_ADDRESS,
+  abi: vetRegistryABI,
+  functionName: "getRegisteredOwners" as const,
+} as const;
+
+/** Wagmi readContract query key — use with queryClient.invalidateQueries({ queryKey }). */
+export const REGISTERED_OWNERS_QUERY_KEY = readContractQueryKey(
+  registeredOwnersReadConfig,
+);
+
+type OwnerInfoStruct = {
+  wallet?: string;
+  name?: string;
+  registered?: boolean;
+};
+
+function mapOwnerEntry(entry: unknown): Owner | null {
+  if (entry === null || entry === undefined) return null;
+
+  if (typeof entry === "object" && "wallet" in entry) {
+    const struct = entry as OwnerInfoStruct;
+    const wallet = struct.wallet;
+    if (!wallet) return null;
     return {
-      address: tuple[0]?.toLowerCase() ?? "",
-      name: tuple[1] ?? "",
+      address: wallet.toLowerCase(),
+      name: struct.name ?? "",
     };
-  });
+  }
+
+  if (Array.isArray(entry)) {
+    const [wallet, name] = entry as [string, string, boolean?];
+    if (!wallet) return null;
+    return {
+      address: String(wallet).toLowerCase(),
+      name: String(name ?? ""),
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Maps raw OwnerInfo from the contract to the frontend Owner type.
+ * Viem/wagmi decode structs as `{ wallet, name, registered }`; legacy tuples are supported.
+ */
+export function mapOwnerInfo(raw: unknown): Owner[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map(mapOwnerEntry)
+    .filter((owner): owner is Owner => owner !== null);
 }
 
 /**
@@ -26,15 +64,11 @@ function mapOwnerInfo(raw: unknown): Owner[] {
  *
  * Usage:
  * ```tsx
- * const { data: owners, isLoading } = useRegisteredOwners();
+ * const { data: owners, isLoading, refetch } = useRegisteredOwners();
  * ```
  */
 export function useRegisteredOwners() {
-  const result = useReadContract({
-    address: VET_REGISTRY_ADDRESS,
-    abi: vetRegistryABI,
-    functionName: "getRegisteredOwners",
-  });
+  const result = useReadContract(registeredOwnersReadConfig);
 
   const owners: Owner[] = mapOwnerInfo(result.data);
 

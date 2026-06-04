@@ -12,14 +12,15 @@ import (
 // Helpers: construct test logs from typed values.
 // ---------------------------------------------------------------------------
 
-func makeMedicalRecordCreatedLog(id *big.Int, name string, age uint8, animalType *big.Int, caretakerName, caretakerPhone string) types.Log {
+func makeMedicalRecordCreatedLog(id *big.Int, owner common.Address, name string, age uint8, animalType *big.Int, caretakerName, caretakerPhone string) types.Log {
 	event := parsedMedicalRecordCreated.Events["MedicalRecordCreated"]
-	data, err := event.Inputs.NonIndexed().Pack(name, age, animalType, caretakerName, caretakerPhone)
+	animalTypeU8 := uint8(animalType.Uint64())
+	data, err := event.Inputs.NonIndexed().Pack(name, age, animalTypeU8, caretakerName, caretakerPhone)
 	if err != nil {
 		panic("makeMedicalRecordCreatedLog pack: " + err.Error())
 	}
 	return types.Log{
-		Topics: []common.Hash{event.ID, common.BigToHash(id)},
+		Topics: []common.Hash{event.ID, common.BigToHash(id), common.BytesToHash(owner.Bytes())},
 		Data:   data,
 	}
 }
@@ -65,8 +66,7 @@ func makeAppointmentPaidEthLog(appointmentID *big.Int, payer common.Address, eth
 // ---------------------------------------------------------------------------
 
 func TestParseMedicalRecordCreated(t *testing.T) {
-	zeroAddr := common.Address{} // used for zero-address edge case in token events
-	_ = zeroAddr
+	ownerAddr := common.HexToAddress("0x70997970C51812dc3A010C7d01b50e0d17dc79C8")
 
 	tests := []struct {
 		name           string
@@ -117,7 +117,7 @@ func TestParseMedicalRecordCreated(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			log := makeMedicalRecordCreatedLog(tt.id, tt.petName, tt.age, tt.animalType, tt.caretakerName, tt.caretakerPhone)
+			log := makeMedicalRecordCreatedLog(tt.id, ownerAddr, tt.petName, tt.age, tt.animalType, tt.caretakerName, tt.caretakerPhone)
 
 			got, err := ParseMedicalRecordCreated(log)
 			if err != nil {
@@ -126,6 +126,9 @@ func TestParseMedicalRecordCreated(t *testing.T) {
 
 			if got.Id.Cmp(tt.id) != 0 {
 				t.Errorf("Id: got %v, want %v", got.Id, tt.id)
+			}
+			if got.Owner != ownerAddr {
+				t.Errorf("Owner: got %v, want %v", got.Owner, ownerAddr)
 			}
 			if got.Name != tt.petName {
 				t.Errorf("Name: got %q, want %q", got.Name, tt.petName)

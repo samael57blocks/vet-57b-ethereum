@@ -71,6 +71,15 @@ The script does the following in order:
 6. **Start indexer** — builds and runs the Go backend (REST API on `:8080`)
 7. **Start Vite** — launches the frontend on `:5173`
 
+### Local wallets (Hardhat)
+
+| Account | Role | UI |
+|---------|------|-----|
+| **#0** `0xf39F…` | Vet (`VITE_VET_ADDRESS` / `VET_ROLE`) | Pets + Appointments |
+| **#1+** | Pet owner | **My Pets** — register via `registerAsOwner` on-chain |
+
+Owner names are stored **on the contract only** (not in PostgreSQL). The Register Pet dropdown reads `getRegisteredOwners()` from the chain.
+
 ### Manual steps (if not using dev.sh)
 
 ```bash
