@@ -1,12 +1,19 @@
+import { readContractQueryKey } from "@wagmi/core/query";
 import { useReadContract } from "wagmi";
 import { VET_REGISTRY_ADDRESS, vetRegistryABI } from "./contract";
 import type { Owner } from "../../owners/types/owner";
 
-/** TanStack Query key for invalidating registered-owners reads across the app. */
-export const REGISTERED_OWNERS_QUERY_KEY = [
-  "vetRegistry",
-  "getRegisteredOwners",
-] as const;
+/** Params shared by the hook and wagmi query invalidation. */
+const registeredOwnersReadConfig = {
+  address: VET_REGISTRY_ADDRESS,
+  abi: vetRegistryABI,
+  functionName: "getRegisteredOwners" as const,
+} as const;
+
+/** Wagmi readContract query key — use with queryClient.invalidateQueries({ queryKey }). */
+export const REGISTERED_OWNERS_QUERY_KEY = readContractQueryKey(
+  registeredOwnersReadConfig,
+);
 
 type OwnerInfoStruct = {
   wallet?: string;
@@ -61,14 +68,7 @@ export function mapOwnerInfo(raw: unknown): Owner[] {
  * ```
  */
 export function useRegisteredOwners() {
-  const result = useReadContract({
-    address: VET_REGISTRY_ADDRESS,
-    abi: vetRegistryABI,
-    functionName: "getRegisteredOwners",
-    query: {
-      queryKey: [...REGISTERED_OWNERS_QUERY_KEY],
-    },
-  });
+  const result = useReadContract(registeredOwnersReadConfig);
 
   const owners: Owner[] = mapOwnerInfo(result.data);
 

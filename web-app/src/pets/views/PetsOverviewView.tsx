@@ -96,7 +96,7 @@ export function PetsOverviewView({ pets, loading }: PetsOverviewViewProps) {
             awaitingSuccessRef.current = false;
             queryClient.invalidateQueries({ queryKey: PET_QUERY_KEY });
             queryClient.invalidateQueries({
-                queryKey: [...REGISTERED_OWNERS_QUERY_KEY],
+                queryKey: REGISTERED_OWNERS_QUERY_KEY,
             });
         }, 2000);
         return () => clearTimeout(timer);

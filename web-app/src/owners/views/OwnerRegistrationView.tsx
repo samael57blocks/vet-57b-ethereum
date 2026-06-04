@@ -28,7 +28,7 @@ export function OwnerRegistrationView() {
   useEffect(() => {
     if (txState.status === "success" && hasSubmitted) {
       void refetch();
-      queryClient.invalidateQueries({ queryKey: [...REGISTERED_OWNERS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: REGISTERED_OWNERS_QUERY_KEY });
     }
   }, [txState.status, hasSubmitted, queryClient, refetch]);
 
