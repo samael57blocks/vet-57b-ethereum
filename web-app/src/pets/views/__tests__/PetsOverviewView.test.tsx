@@ -1,5 +1,5 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, act } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { PetsOverviewView } from "../PetsOverviewView";
 import { PET_QUERY_KEY } from "../../hooks/usePetsOverview";
 
@@ -10,7 +10,16 @@ import { PET_QUERY_KEY } from "../../hooks/usePetsOverview";
 let mockIsConnected = true;
 
 vi.mock("wagmi", () => ({
-  useAccount: () => ({ isConnected: mockIsConnected, address: "0x1234567890abcdef1234567890abcdef12345678" }),
+  useAccount: () => ({
+    isConnected: mockIsConnected,
+    address: "0x1234567890abcdef1234567890abcdef12345678",
+  }),
+  useReadContract: () => ({
+    data: [],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  }),
 }));
 
 let currentTxState: Record<string, unknown> = { status: "idle" };
@@ -37,6 +46,20 @@ vi.mock("@tanstack/react-query", () => ({
 // Helpers
 // ---------------------------------------------------------------------------
 
+const TEST_OWNER_ADDRESS =
+  "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
+
+function fillOwner() {
+  const ownerSelect = screen.getByLabelText("Owner");
+  if ((ownerSelect as HTMLSelectElement).value !== "__custom__") {
+    fireEvent.change(ownerSelect, { target: { value: "__custom__" } });
+  }
+  fireEvent.change(
+    screen.getByPlaceholderText(/Enter owner Ethereum address/i),
+    { target: { value: TEST_OWNER_ADDRESS } }
+  );
+}
+
 function fillForm() {
   fireEvent.change(screen.getByLabelText("Name"), {
     target: { value: "Boby" },
@@ -47,6 +70,7 @@ function fillForm() {
   fireEvent.change(screen.getByLabelText("Animal Type"), {
     target: { value: "Dog" },
   });
+  fillOwner();
   fireEvent.change(screen.getByLabelText("Caretaker Name"), {
     target: { value: "John" },
   });
@@ -61,10 +85,15 @@ function fillForm() {
 
 describe("PetsOverviewView", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     mockIsConnected = true;
     currentTxState = { status: "idle" };
     mockRegisterPet.mockReset();
     mockInvalidateQueries.mockReset();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   describe("Wallet Guard", () => {
@@ -118,6 +147,9 @@ describe("PetsOverviewView", () => {
       expect(
         screen.getByText("Caretaker phone is required")
       ).toBeInTheDocument();
+      expect(
+        screen.getByText("Select an owner or enter an address")
+      ).toBeInTheDocument();
 
       // Assert registerPet NOT called
       expect(mockRegisterPet).not.toHaveBeenCalled();
@@ -125,7 +157,7 @@ describe("PetsOverviewView", () => {
   });
 
   describe("Registration Flow", () => {
-    it("calls registerPet with valid data and shows tx state transitions", () => {
+    it("calls registerPet with valid data and shows tx state transitions", async () => {
       const { rerender } = render(<PetsOverviewView pets={[]} />);
 
       // Open dialog
@@ -142,7 +174,7 @@ describe("PetsOverviewView", () => {
         name: "Boby",
         age: 3,
         animalType: 0,
-        owner: "0x1234567890abcdef1234567890abcdef12345678",
+        owner: TEST_OWNER_ADDRESS,
         caretakerName: "John",
         caretakerPhone: "+56912345678",
       });
@@ -161,9 +193,12 @@ describe("PetsOverviewView", () => {
         screen.getByText("Transaction processing...")
       ).toBeInTheDocument();
 
-      // Simulate success → auto-close + invalidate
+      // Simulate success → auto-close + invalidate after delay
       currentTxState = { status: "success", txHash: "0xabc" };
       rerender(<PetsOverviewView pets={[]} />);
+      await act(async () => {
+        vi.advanceTimersByTime(2000);
+      });
 
       expect(mockInvalidateQueries).toHaveBeenCalledWith({
         queryKey: PET_QUERY_KEY,
@@ -171,7 +206,7 @@ describe("PetsOverviewView", () => {
       expect(screen.queryByText("Register New Pet")).not.toBeInTheDocument();
     });
 
-    it("shows error state on transaction failure and allows retry", () => {
+    it("shows error state on transaction failure and returns to form", () => {
       const { rerender } = render(<PetsOverviewView pets={[]} />);
 
       // Open dialog
@@ -180,9 +215,6 @@ describe("PetsOverviewView", () => {
       // Fill and submit
       fillForm();
       fireEvent.click(screen.getAllByRole("button", { name: /register pet/i })[1]);
-
-      // Clear initial call count
-      mockRegisterPet.mockClear();
 
       // Simulate error
       currentTxState = {
@@ -195,10 +227,9 @@ describe("PetsOverviewView", () => {
         screen.getByText("Error: User rejected transaction")
       ).toBeInTheDocument();
 
-      // Click Try Again
-      fireEvent.click(screen.getByRole("button", { name: /try again/i }));
+      fireEvent.click(screen.getByRole("button", { name: /back to form/i }));
 
-      // Should submit again
+      expect(screen.getByLabelText("Name")).toBeInTheDocument();
       expect(mockRegisterPet).toHaveBeenCalledTimes(1);
     });
   });

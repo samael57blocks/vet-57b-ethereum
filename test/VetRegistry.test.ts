@@ -565,4 +565,114 @@ describe("VetRegistry", () => {
       ).to.be.revertedWithCustomError(registry, "AccessControlUnauthorizedAccount");
     });
   });
+
+  describe("Owner Registration", () => {
+    it("registers a new owner and emits OwnerRegistered event", async () => {
+      const tx = await registry.connect(payer).registerAsOwner("Alice");
+
+      await expect(tx)
+        .to.emit(registry, "OwnerRegistered")
+        .withArgs(payer.address, "Alice");
+    });
+
+    it("re-registration updates name without duplicate entries", async () => {
+      await registry.connect(payer).registerAsOwner("Alice");
+
+      // Re-register with updated name
+      const tx = await registry.connect(payer).registerAsOwner("Alice Smith");
+
+      await expect(tx)
+        .to.emit(registry, "OwnerRegistered")
+        .withArgs(payer.address, "Alice Smith");
+
+      // Verify only one entry in the owners list
+      const owners = await registry.getRegisteredOwners();
+      expect(owners.length).to.equal(1);
+      expect(owners[0].wallet).to.equal(payer.address);
+      expect(owners[0].name).to.equal("Alice Smith");
+      expect(owners[0].registered).to.equal(true);
+    });
+
+    it("reverts when name is empty", async () => {
+      await expect(
+        registry.connect(payer).registerAsOwner("")
+      ).to.be.revertedWith("Name must be at least 2 characters");
+    });
+
+    it("reverts when name exceeds 32 characters", async () => {
+      const longName = "a".repeat(33);
+      await expect(
+        registry.connect(payer).registerAsOwner(longName)
+      ).to.be.revertedWith("Name must be at most 32 characters");
+    });
+  });
+
+  describe("Owner Queries", () => {
+    it("returns empty array when no owners registered", async () => {
+      const owners = await registry.getRegisteredOwners();
+      expect(owners.length).to.equal(0);
+    });
+
+    it("returns single owner with correct address and name", async () => {
+      await registry.connect(payer).registerAsOwner("Alice");
+
+      const owners = await registry.getRegisteredOwners();
+      expect(owners.length).to.equal(1);
+      expect(owners[0].wallet).to.equal(payer.address);
+      expect(owners[0].name).to.equal("Alice");
+      expect(owners[0].registered).to.equal(true);
+    });
+
+    it("returns multiple owners with correct entries", async () => {
+      await registry.connect(payer).registerAsOwner("Alice");
+      await registry.connect(unauthorized).registerAsOwner("Bob");
+
+      const owners = await registry.getRegisteredOwners();
+      expect(owners.length).to.equal(2);
+
+      // Owners may be in any order based on registration order
+      const alice = owners.find(o => o.wallet === payer.address)!;
+      const bob = owners.find(o => o.wallet === unauthorized.address)!;
+      expect(alice.name).to.equal("Alice");
+      expect(bob.name).to.equal("Bob");
+      expect(alice.registered).to.equal(true);
+      expect(bob.registered).to.equal(true);
+    });
+  });
+
+  describe("Owner Pet Queries", () => {
+    beforeEach(async () => {
+      // Register 3 pets:
+      // pet 1 → owner (deployer)
+      // pet 2 → payer
+      // pet 3 → owner (deployer)
+      await registry.registerPet(PET_1.name, PET_1.age, PET_1.animalType, owner.address, PET_1.caretakerName, PET_1.caretakerPhone);
+      await registry.registerPet(PET_2.name, PET_2.age, PET_2.animalType, payer.address, PET_2.caretakerName, PET_2.caretakerPhone);
+      await registry.registerPet(PET_1.name, PET_1.age, PET_1.animalType, owner.address, PET_1.caretakerName, PET_1.caretakerPhone);
+    });
+
+    it("returns empty array when owner has no pets", async () => {
+      const pets = await registry.getPetsByOwner(unauthorized.address);
+      expect(pets.length).to.equal(0);
+    });
+
+    it("returns single pet ID for owner with one pet", async () => {
+      const pets = await registry.getPetsByOwner(payer.address);
+      expect(pets.length).to.equal(1);
+      expect(pets[0]).to.equal(2n);
+    });
+
+    it("returns all pet IDs for owner with multiple pets", async () => {
+      const pets = await registry.getPetsByOwner(owner.address);
+      expect(pets.length).to.equal(2);
+      expect(pets[0]).to.equal(1n);
+      expect(pets[1]).to.equal(3n);
+    });
+
+    it("returns empty array for non-existent address", async () => {
+      const nonExistent = "0x0000000000000000000000000000000000000001";
+      const pets = await registry.getPetsByOwner(nonExistent);
+      expect(pets.length).to.equal(0);
+    });
+  });
 });

@@ -19,6 +19,7 @@ import (
 // MedicalRecordCreated is emitted when a new pet medical record is registered.
 type MedicalRecordCreated struct {
 	Id             *big.Int
+	Owner          common.Address
 	Name           string
 	Age            uint8
 	AnimalType     uint8 // 0=Dog, 1=Cat (enum value as uint8)
@@ -56,7 +57,7 @@ type AppointmentPaidEth struct {
 // Parsed once at startup via accounts/abi.JSON.
 // ---------------------------------------------------------------------------
 
-const medicalRecordCreatedABI = `[{"anonymous":false,"inputs":[{"indexed":true,"name":"id","type":"uint256"},{"indexed":false,"name":"name","type":"string"},{"indexed":false,"name":"age","type":"uint8"},{"indexed":false,"name":"animalType","type":"uint8"},{"indexed":false,"name":"caretakerName","type":"string"},{"indexed":false,"name":"caretakerPhone","type":"string"}],"name":"MedicalRecordCreated","type":"event"}]`
+const medicalRecordCreatedABI = `[{"anonymous":false,"inputs":[{"indexed":true,"name":"id","type":"uint256"},{"indexed":true,"name":"owner","type":"address"},{"indexed":false,"name":"name","type":"string"},{"indexed":false,"name":"age","type":"uint8"},{"indexed":false,"name":"animalType","type":"uint8"},{"indexed":false,"name":"caretakerName","type":"string"},{"indexed":false,"name":"caretakerPhone","type":"string"}],"name":"MedicalRecordCreated","type":"event"}]`
 
 const medicalAppointmentCreatedABI = `[{"anonymous":false,"inputs":[{"indexed":true,"name":"id","type":"uint256"},{"indexed":true,"name":"petId","type":"uint256"},{"indexed":false,"name":"date","type":"uint256"},{"indexed":false,"name":"time","type":"string"},{"indexed":false,"name":"appointmentValue","type":"uint256"}],"name":"MedicalAppointmentCreated","type":"event"}]`
 
@@ -113,15 +114,16 @@ func ParseMedicalRecordCreated(log types.Log) (MedicalRecordCreated, error) {
 	var result MedicalRecordCreated
 	event := parsedMedicalRecordCreated.Events["MedicalRecordCreated"]
 
-	if len(log.Topics) < 2 {
-		return result, fmt.Errorf("MedicalRecordCreated: need at least 2 topics, got %d", len(log.Topics))
+	if len(log.Topics) < 3 {
+		return result, fmt.Errorf("MedicalRecordCreated: need at least 3 topics, got %d", len(log.Topics))
 	}
 	if log.Topics[0] != event.ID {
 		return result, fmt.Errorf("MedicalRecordCreated: event sig mismatch")
 	}
 
-	// Indexed: id (uint256, topic[1])
+	// Indexed: id (uint256, topic[1]), owner (address, topic[2])
 	result.Id = log.Topics[1].Big()
+	result.Owner = common.BytesToAddress(log.Topics[2].Bytes())
 
 	// Non-indexed: name (string), age (uint8), animalType (uint8),
 	//              caretakerName (string), caretakerPhone (string)

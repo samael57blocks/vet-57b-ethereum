@@ -26,6 +26,7 @@ interface PetResponse {
     animalType: string;
     caretakerName: string;
     caretakerPhone: string;
+    owner: string;
     createdAt: string;
 }
 
@@ -54,6 +55,7 @@ export const AxiosPetService: IPetService = {
             animalType: p.animalType as Pet["animalType"],
             caretakerName: p.caretakerName,
             caretakerPhone: p.caretakerPhone,
+            owner: p.owner,
         }));
     },
 };
