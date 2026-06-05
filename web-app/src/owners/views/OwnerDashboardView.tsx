@@ -86,8 +86,6 @@ export function OwnerDashboardView({ ownerAddress }: OwnerDashboardViewProps) {
     error: apptError,
   } = useAppointments(selectedPetId);
 
-  const unpaidAppointments = appointments.filter((a) => a.paidValue === 0);
-
   /** Find the appointment being paid so we can pass its value to the modal */
   const payingAppointment = payingAppointmentId
     ? appointments.find((a) => a.id === payingAppointmentId)
@@ -167,45 +165,54 @@ export function OwnerDashboardView({ ownerAddress }: OwnerDashboardViewProps) {
 
           {apptError && <p className="tx-error">Error: {apptError.message}</p>}
 
-          {!apptLoading && !apptError && selectedPetId && unpaidAppointments.length === 0 && (
+          {!apptLoading && !apptError && selectedPetId && appointments.length === 0 && (
             <div className="empty-state">
               <div className="empty-state-icon">📅</div>
-              <p className="empty-state-text">No unpaid appointments</p>
+              <p className="empty-state-text">No appointments</p>
             </div>
           )}
 
-          {!apptLoading && !apptError && unpaidAppointments.length > 0 && (
+          {!apptLoading && !apptError && appointments.length > 0 && (
             <div className="pets-grid">
-              {unpaidAppointments.map((appt) => (
-                <div className="appointment-card" key={appt.id}>
-                  <div className="appointment-card-header">
-                    <p className="appointment-card-date">{formatDate(appt.date)}</p>
+              {appointments.map((appt) => {
+                const isPaid = appt.paidValue > 0;
+                return (
+                  <div className="appointment-card" key={appt.id}>
+                    <div className="appointment-card-header">
+                      <p className="appointment-card-date">{formatDate(appt.date)}</p>
+                    </div>
+                    <div className="appointment-card-body">
+                      <p className="appointment-card-detail">
+                        <span className="appointment-card-detail-label">Time</span>
+                        <span className="appointment-card-value">{appt.time}</span>
+                      </p>
+                      <p className="appointment-card-detail">
+                        <span className="appointment-card-detail-label">Value</span>
+                        <span className="appointment-card-value">{formatDollars(appt.appointmentValue)}</span>
+                      </p>
+                      <p className="appointment-card-detail">
+                        <span className="appointment-card-detail-label">Status</span>
+                        <span
+                          className={`appointment-card-status ${
+                            isPaid ? "appointment-card-status--paid" : "appointment-card-status--pending"
+                          }`}
+                        >
+                          {isPaid ? "Paid" : "Unpaid"}
+                        </span>
+                      </p>
+                      {!isPaid && (
+                        <button
+                          className="btn-primary"
+                          onClick={() => setPayingAppointmentId(appt.id)}
+                          style={{ marginTop: "0.75rem" }}
+                        >
+                          Pay
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="appointment-card-body">
-                    <p className="appointment-card-detail">
-                      <span className="appointment-card-detail-label">Time</span>
-                      <span className="appointment-card-value">{appt.time}</span>
-                    </p>
-                    <p className="appointment-card-detail">
-                      <span className="appointment-card-detail-label">Value</span>
-                      <span className="appointment-card-value">{formatDollars(appt.appointmentValue)}</span>
-                    </p>
-                    <p className="appointment-card-detail">
-                      <span className="appointment-card-detail-label">Status</span>
-                      <span className="appointment-card-status appointment-card-status--pending">
-                        Unpaid
-                      </span>
-                    </p>
-                    <button
-                      className="btn-primary"
-                      onClick={() => setPayingAppointmentId(appt.id)}
-                      style={{ marginTop: "0.75rem" }}
-                    >
-                      Pay
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 

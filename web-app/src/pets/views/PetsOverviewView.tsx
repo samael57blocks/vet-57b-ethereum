@@ -421,7 +421,7 @@ export function PetsOverviewView({ pets, loading }: PetsOverviewViewProps) {
                             <PetOverView
                                 key={pet.id}
                                 pet={pet}
-                                ownerName={ownerMap.get(pet.owner.toLowerCase())}
+                                ownerName={pet.owner ? ownerMap.get(pet.owner.toLowerCase()) : undefined}
                             />
                         ));
                     })()}

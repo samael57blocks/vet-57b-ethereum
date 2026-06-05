@@ -23,7 +23,7 @@ function getRandomPetImage(petId: string): string {
  * Displays a card with pet information including photo, name, and age
  */
 export function PetOverView({ pet, ownerName }: PetOverviewProps) {
-    const displayOwner = ownerName ?? `${pet.owner.slice(0, 6)}...${pet.owner.slice(-4)}`;
+    const displayOwner = ownerName ?? (pet.owner ? `${pet.owner.slice(0, 6)}...${pet.owner.slice(-4)}` : "Unknown owner");
 
     return (
         <article className="pet-card">
