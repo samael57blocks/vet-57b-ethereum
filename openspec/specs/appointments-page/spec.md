@@ -96,13 +96,22 @@ The system MUST refresh the appointments list after a successful schedule withou
 
 ### Requirement: Pay with USDC Action
 
-The appointment card MUST show a "Pay with USDC" button when the appointment is unpaid (`paidValue === 0`). The button MUST NOT appear when `paidValue > 0`. The payment flow MUST integrate with `usePayAppointmentToken` and follow the TxState lifecycle.
+The appointment card MUST show a "Pay with USDC" button when the appointment is unpaid (`paidValue === 0`) AND the viewer is NOT a vet. The button MUST NOT appear when `paidValue > 0` OR the viewer IS a vet. The payment flow MUST integrate with `usePayAppointmentToken` and follow the TxState lifecycle.
+(Previously: Show button when `paidValue === 0`, hide when `paidValue > 0`, no vet awareness)
 
-#### Scenario: Show Pay button for unpaid appointment
+#### Scenario: Show Pay button for non-vet viewer with unpaid appointment
 
 - GIVEN an appointment with `paidValue === 0`
+- AND the connected wallet is NOT a registered vet
 - WHEN the appointment card renders
 - THEN a "Pay with USDC" button is visible
+
+#### Scenario: Hide Pay button when viewer is a vet
+
+- GIVEN an appointment with `paidValue === 0`
+- AND the connected wallet IS a registered vet
+- WHEN the appointment card renders
+- THEN no pay button is visible
 
 #### Scenario: Hide Pay button for paid appointment
 

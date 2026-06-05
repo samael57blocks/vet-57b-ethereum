@@ -413,9 +413,18 @@ export function PetsOverviewView({ pets, loading }: PetsOverviewViewProps) {
                 </div>
             ) : (
                 <div className="pets-grid">
-                    {pets.map((pet) => (
-                        <PetOverView key={pet.id} pet={pet} />
-                    ))}
+                    {(() => {
+                        const ownerMap = new Map<string, string>(
+                            registeredOwners.map((o) => [o.address.toLowerCase(), o.name]),
+                        );
+                        return pets.map((pet) => (
+                            <PetOverView
+                                key={pet.id}
+                                pet={pet}
+                                ownerName={ownerMap.get(pet.owner.toLowerCase())}
+                            />
+                        ));
+                    })()}
                 </div>
             )}
 

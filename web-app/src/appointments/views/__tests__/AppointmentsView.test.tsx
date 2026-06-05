@@ -140,6 +140,8 @@ describe("AppointmentsView", () => {
                     appointments={[]}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -161,6 +163,8 @@ describe("AppointmentsView", () => {
                     appointments={[]}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -184,6 +188,8 @@ describe("AppointmentsView", () => {
                     appointments={[]}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -204,6 +210,8 @@ describe("AppointmentsView", () => {
                     appointments={[]}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -225,6 +233,8 @@ describe("AppointmentsView", () => {
                     appointments={[]}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -243,6 +253,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -273,6 +285,8 @@ describe("AppointmentsView", () => {
                     appointments={[]}
                     loading={true}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -289,6 +303,8 @@ describe("AppointmentsView", () => {
                     appointments={[]}
                     loading={false}
                     error="Something went wrong"
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -307,6 +323,8 @@ describe("AppointmentsView", () => {
                     appointments={[]}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -335,6 +353,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -358,6 +378,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -378,6 +400,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -394,6 +418,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -414,6 +440,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -430,6 +458,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -450,6 +480,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -469,6 +501,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -495,6 +529,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -519,6 +555,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -539,6 +577,8 @@ describe("AppointmentsView", () => {
                     appointments={paidOnly}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -566,6 +606,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -595,6 +637,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 

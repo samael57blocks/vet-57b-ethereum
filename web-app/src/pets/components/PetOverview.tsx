@@ -6,6 +6,8 @@ import type { Pet } from "../types/pet";
 interface PetOverviewProps {
     /** The pet information to display */
     pet: Pet;
+    /** Optional registered owner name; falls back to truncated address */
+    ownerName?: string;
 }
 
 /**
@@ -20,7 +22,9 @@ function getRandomPetImage(petId: string): string {
  * PetOverView Component
  * Displays a card with pet information including photo, name, and age
  */
-export function PetOverView({ pet }: PetOverviewProps) {
+export function PetOverView({ pet, ownerName }: PetOverviewProps) {
+    const displayOwner = ownerName ?? `${pet.owner.slice(0, 6)}...${pet.owner.slice(-4)}`;
+
     return (
         <article className="pet-card">
             <img
@@ -34,6 +38,7 @@ export function PetOverView({ pet }: PetOverviewProps) {
                 <p className="pet-card-age">
                     {pet.age} {pet.age === 1 ? "year" : "years"} old
                 </p>
+                <p className="pet-card-owner">{displayOwner}</p>
             </div>
         </article>
     );
