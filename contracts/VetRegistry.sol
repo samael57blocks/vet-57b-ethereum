@@ -46,6 +46,12 @@ contract VetRegistry is AccessControl {
         uint256 paidValue;
     }
 
+    struct OwnerInfo {
+        address wallet;
+        string name;
+        bool registered;
+    }
+
     // ==================== Events ====================
 
     event MedicalRecordCreated(
@@ -80,6 +86,8 @@ contract VetRegistry is AccessControl {
         uint256 usdCents
     );
 
+    event OwnerRegistered(address indexed owner, string name);
+
     // ==================== State ====================
 
     uint256 private _petCount;
@@ -87,6 +95,8 @@ contract VetRegistry is AccessControl {
 
     mapping(uint256 => MedicalRecord) private _medicalRecords;
     mapping(uint256 => MedicalAppointment) private _appointments;
+    mapping(address => OwnerInfo) private _owners;
+    address[] private _registeredOwnerAddresses;
 
     bytes32 public constant VET_ROLE = keccak256("VET_ROLE");
 
@@ -241,6 +251,67 @@ contract VetRegistry is AccessControl {
      */
     function getAppointmentCount() external view returns (uint256) {
         return _appointmentCount;
+    }
+
+    // ==================== Owner Registration Functions ====================
+
+    /**
+     * @notice Register as a pet owner (permissionless)
+     * @param name Owner's display name (2–32 characters)
+     */
+    function registerAsOwner(string calldata name) external {
+        require(bytes(name).length >= 2, "Name must be at least 2 characters");
+        require(bytes(name).length <= 32, "Name must be at most 32 characters");
+
+        if (_owners[msg.sender].registered) {
+            _owners[msg.sender].name = name;
+        } else {
+            _owners[msg.sender] = OwnerInfo({
+                wallet: msg.sender,
+                name: name,
+                registered: true
+            });
+            _registeredOwnerAddresses.push(msg.sender);
+        }
+
+        emit OwnerRegistered(msg.sender, name);
+    }
+
+    /**
+     * @notice Get all registered owners
+     * @return OwnerInfo[] Array of registered owner info
+     */
+    function getRegisteredOwners() external view returns (OwnerInfo[] memory) {
+        uint256 length = _registeredOwnerAddresses.length;
+        OwnerInfo[] memory result = new OwnerInfo[](length);
+        for (uint256 i = 0; i < length; i++) {
+            address addr = _registeredOwnerAddresses[i];
+            result[i] = _owners[addr];
+        }
+        return result;
+    }
+
+    /**
+     * @notice Get all pet IDs owned by a given address
+     * @param owner The owner's address
+     * @return uint256[] Array of pet IDs owned by the address
+     */
+    function getPetsByOwner(address owner) external view returns (uint256[] memory) {
+        uint256 count;
+        for (uint256 i = 1; i <= _petCount; i++) {
+            if (_medicalRecords[i].owner == owner) {
+                count++;
+            }
+        }
+        uint256[] memory result = new uint256[](count);
+        uint256 index;
+        for (uint256 i = 1; i <= _petCount; i++) {
+            if (_medicalRecords[i].owner == owner) {
+                result[index] = i;
+                index++;
+            }
+        }
+        return result;
     }
 
     // ==================== Payment Functions ====================

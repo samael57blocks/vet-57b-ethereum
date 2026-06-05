@@ -160,9 +160,11 @@ deploy_contracts() {
     sed -i '/^VITE_CONTRACT_ADDRESS=/Id' "$ENV_FILE"
     sed -i '/^VITE_USDC_ADDRESS=/Id' "$ENV_FILE"
     sed -i '/^VITE_PRICE_FEED_ADDRESS=/Id' "$ENV_FILE"
+    sed -i '/^VITE_VET_ADDRESS=/Id' "$ENV_FILE"
     echo "VITE_CONTRACT_ADDRESS=$vet_address" >> "$ENV_FILE"
     echo "VITE_USDC_ADDRESS=$usdc_address" >> "$ENV_FILE"
     echo "VITE_PRICE_FEED_ADDRESS=$price_feed_address" >> "$ENV_FILE"
+    echo "VITE_VET_ADDRESS=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266" >> "$ENV_FILE"
 
     ok "web-app/.env updated"
 }
