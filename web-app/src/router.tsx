@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
 import NotFoundPage from "./common/pages/NotFound";
+import ErrorPage from "./common/pages/ErrorPage";
 import { RoleGuard } from "./common/components/RoleGuard";
 import { PetsOverviewPage } from "./pets/pages/PetsOverview";
 import { AppointmentsPage } from "./appointments/pages/AppointmentsPage";
@@ -10,6 +11,7 @@ export const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
+    errorElement: <ErrorPage />,
     children: [
       {
         index: true,

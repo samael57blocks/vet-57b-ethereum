@@ -11,10 +11,28 @@ import { APPOINTMENTS_QUERY_KEY } from "../../hooks/useAppointments";
 
 let mockIsConnected = true;
 
-vi.mock("wagmi", () => ({
-    useAccount: () => ({ isConnected: mockIsConnected }),
-    useConnect: () => ({ connect: vi.fn(), connectors: [] }),
-}));
+vi.mock("wagmi", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("wagmi")>();
+    return {
+        ...actual,
+        useAccount: () => ({ isConnected: mockIsConnected }),
+        useConnect: () => ({ connect: vi.fn(), connectors: [] }),
+        useReadContract: () => ({ data: undefined, isLoading: false }),
+        useWriteContract: () => ({
+            writeContract: vi.fn(),
+            data: undefined,
+            isPending: false,
+            error: null,
+            reset: vi.fn(),
+        }),
+        useWaitForTransactionReceipt: () => ({
+            isLoading: false,
+            isSuccess: false,
+            isError: false,
+            error: null,
+        }),
+    };
+});
 
 let currentTxState: Record<string, unknown> = { status: "idle" };
 const mockScheduleAppointment = vi.fn();
@@ -98,7 +116,7 @@ function openDialogAndGetSubmit(): HTMLElement {
 
 function fillScheduleForm() {
     fireEvent.change(screen.getByLabelText("Date"), {
-        target: { value: "2026-06-01" },
+        target: { value: "2026-07-15" },
     });
     fireEvent.change(screen.getByLabelText("Time"), {
         target: { value: "10:30" },
@@ -140,6 +158,8 @@ describe("AppointmentsView", () => {
                     appointments={[]}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -161,6 +181,8 @@ describe("AppointmentsView", () => {
                     appointments={[]}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -184,6 +206,8 @@ describe("AppointmentsView", () => {
                     appointments={[]}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -204,6 +228,8 @@ describe("AppointmentsView", () => {
                     appointments={[]}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -225,6 +251,8 @@ describe("AppointmentsView", () => {
                     appointments={[]}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -243,6 +271,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -273,6 +303,8 @@ describe("AppointmentsView", () => {
                     appointments={[]}
                     loading={true}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -289,6 +321,8 @@ describe("AppointmentsView", () => {
                     appointments={[]}
                     loading={false}
                     error="Something went wrong"
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -307,6 +341,8 @@ describe("AppointmentsView", () => {
                     appointments={[]}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -335,6 +371,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -358,6 +396,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -378,6 +418,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -394,6 +436,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -414,6 +458,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -430,6 +476,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -450,6 +498,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -469,6 +519,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -495,6 +547,8 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
@@ -509,7 +563,7 @@ describe("AppointmentsView", () => {
     });
 
     describe("Payment", () => {
-        it("shows 'Pay with USDC' button for unpaid appointments", () => {
+        it("shows 'Pay' button for unpaid appointments", () => {
             render(
                 <AppointmentsView
                     isConnected={true}
@@ -519,15 +573,17 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
-            // Appointment 1 is unpaid (paidValue === 0)
-            const payButtons = screen.getAllByRole("button", { name: /pay with usdc/i });
+            // Appointment 1 is unpaid (paidValue === 0) — card shows "Pay"
+            const payButtons = screen.getAllByRole("button", { name: /^pay$/i });
             expect(payButtons).toHaveLength(1);
         });
 
-        it("does NOT show 'Pay with USDC' for paid appointments", () => {
+        it("does NOT show 'Pay' for paid appointments", () => {
             // Render only the paid appointment
             const paidOnly = sampleAppointments.filter((a) => a.paidValue > 0);
             render(
@@ -539,11 +595,13 @@ describe("AppointmentsView", () => {
                     appointments={paidOnly}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
             expect(
-                screen.queryByRole("button", { name: /pay with usdc/i })
+                screen.queryByRole("button", { name: /^pay$/i })
             ).not.toBeInTheDocument();
         });
 
@@ -566,11 +624,13 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
-            // Click pay button on the unpaid appointment
-            const payBtn = screen.getByRole("button", { name: /pay with usdc/i });
+            // Click the card's "Pay" button on the unpaid appointment
+            const payBtn = screen.getByRole("button", { name: /^pay$/i });
             fireEvent.click(payBtn);
 
             // Modal should show Approve USDC button
@@ -595,16 +655,20 @@ describe("AppointmentsView", () => {
                     appointments={sampleAppointments}
                     loading={false}
                     error={null}
+                    isVet={false}
+                    isVetLoading={false}
                 />
             );
 
-            // Click pay button on the unpaid appointment
-            const payBtn = screen.getByRole("button", { name: /pay with usdc/i });
+            // Click the card's "Pay" button on the unpaid appointment
+            const payBtn = screen.getByRole("button", { name: /^pay$/i });
             fireEvent.click(payBtn);
 
-            // Modal should show Pay with USDC button alongside the card's button
-            const payButtons = screen.getAllByRole("button", { name: /pay with usdc/i });
-            expect(payButtons).toHaveLength(2); // Card button + modal button
+            // Modal should show "Pay with USDC", card still shows "Pay"
+            const cardPay = screen.getByRole("button", { name: /^pay$/i });
+            expect(cardPay).toBeInTheDocument();
+            const modalPay = screen.getByRole("button", { name: /pay with usdc/i });
+            expect(modalPay).toBeInTheDocument();
         });
     });
 });

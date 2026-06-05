@@ -17,6 +17,8 @@ interface AppointmentsViewProps {
     appointments: MedicalAppointment[];
     loading: boolean;
     error: string | null;
+    isVet: boolean;
+    isVetLoading: boolean;
 }
 
 /** Formats cents to dollar string, e.g., 5000 → "$50.00" */
@@ -39,9 +41,11 @@ function formatDate(date: Date): string {
 function AppointmentCard({
     appointment,
     onPayAppointment,
+    isVet,
 }: {
     appointment: MedicalAppointment;
     onPayAppointment?: (id: string) => void;
+    isVet: boolean;
 }) {
     const isPaid = appointment.paidValue > 0;
 
@@ -69,7 +73,7 @@ function AppointmentCard({
                         {isPaid ? "Paid" : "Pending"}
                     </span>
                 </p>
-                {!isPaid && onPayAppointment && (
+                {!isPaid && onPayAppointment && !isVet && (
                     <button
                         className="btn-primary"
                         onClick={() => onPayAppointment(appointment.id)}
@@ -316,6 +320,8 @@ export function AppointmentsView({
     appointments,
     loading,
     error,
+    isVet,
+    isVetLoading: _isVetLoading,
 }: AppointmentsViewProps) {
     const queryClient = useQueryClient();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -394,6 +400,7 @@ export function AppointmentsView({
                             key={appt.id}
                             appointment={appt}
                             onPayAppointment={setPayingAppointmentId}
+                            isVet={isVet}
                         />
                     ))}
                 </div>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAccount } from "wagmi";
 import { usePetsOverview } from "../../pets/hooks/usePetsOverview";
 import { useAppointments } from "../hooks/useAppointments";
+import { useIsVet } from "../../hooks/web3/useIsVet";
 import { AppointmentsView } from "../views/AppointmentsView";
 
 /**
@@ -15,6 +16,7 @@ export function AppointmentsPage() {
     const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
     const { data: appointments, isLoading: appsLoading, error: appsError } =
         useAppointments(selectedPetId);
+    const { isVet, isLoading: isVetLoading } = useIsVet();
 
     if (petsError) return <div className="main-content"><p>Error: {petsError}</p></div>;
 
@@ -27,6 +29,8 @@ export function AppointmentsPage() {
             appointments={appointments ?? []}
             loading={appsLoading}
             error={appsError instanceof Error ? appsError.message : null}
+            isVet={isVet}
+            isVetLoading={isVetLoading}
         />
     );
 }

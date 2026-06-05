@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useReadContracts } from "wagmi";
 import { usePetsByOwner } from "../../hooks/web3/usePetsByOwner";
 import { useAppointments } from "../../appointments/hooks/useAppointments";
 import { PayAppointmentModal } from "../../appointments/components/PayAppointmentModal";
 import { APPOINTMENTS_QUERY_KEY } from "../../appointments/hooks/useAppointments";
+import { VET_REGISTRY_ADDRESS, vetRegistryABI } from "../../hooks/web3/contract";
 
 /**
  * Props for the OwnerDashboardView component.
@@ -35,13 +37,38 @@ function formatDate(date: Date): string {
  */
 export function OwnerDashboardView({ ownerAddress }: OwnerDashboardViewProps) {
   const queryClient = useQueryClient();
-  const { data: petIds, isLoading: petsLoading, error: petsError, refetch: refetchPets } = usePetsByOwner(ownerAddress);
-  const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
-  const [payingAppointmentId, setPayingAppointmentId] = useState<string | null>(null);
+    const { data: petIds, isLoading: petsLoading, error: petsError, refetch: refetchPets } = usePetsByOwner(ownerAddress);
+    const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
+    const [payingAppointmentId, setPayingAppointmentId] = useState<string | null>(null);
 
-  const petIdStrings: string[] = petIds
-    ? (petIds as bigint[]).map((id) => id.toString())
-    : [];
+    const petIdStrings: string[] = petIds
+        ? (petIds as bigint[]).map((id) => id.toString())
+        : [];
+
+    // Batch-read pet names from contract
+    const { data: medicalRecords } = useReadContracts({
+        contracts: (petIds as bigint[] | undefined)?.map((id) => ({
+            address: VET_REGISTRY_ADDRESS,
+            abi: vetRegistryABI,
+            functionName: "getMedicalRecord",
+            args: [id],
+        })) ?? [],
+        query: {
+            enabled: petIdStrings.length > 0,
+        },
+    });
+
+    // Build map of pet ID string → name for the dropdown
+    const petNameMap = new Map<string, string>();
+    if (medicalRecords) {
+        for (const [i, idStr] of petIdStrings.entries()) {
+            const record = medicalRecords[i];
+            if (record?.status === "success" && record.result) {
+                const r = record.result as unknown as { name: string };
+                petNameMap.set(idStr, r.name);
+            }
+        }
+    }
 
   // Auto-select the first pet when data loads and no selection exists
   useEffect(() => {
@@ -58,8 +85,6 @@ export function OwnerDashboardView({ ownerAddress }: OwnerDashboardViewProps) {
     isLoading: apptLoading,
     error: apptError,
   } = useAppointments(selectedPetId);
-
-  const unpaidAppointments = appointments.filter((a) => a.paidValue === 0);
 
   /** Find the appointment being paid so we can pass its value to the modal */
   const payingAppointment = payingAppointmentId
@@ -122,7 +147,7 @@ export function OwnerDashboardView({ ownerAddress }: OwnerDashboardViewProps) {
               >
                 {petIdStrings.map((id) => (
                   <option key={id} value={id}>
-                    Pet #{id}
+                    {petNameMap.get(id) ?? `Pet #${id}`}
                   </option>
                 ))}
               </select>
@@ -132,7 +157,7 @@ export function OwnerDashboardView({ ownerAddress }: OwnerDashboardViewProps) {
           {/* Appointments section */}
           <h2 className="page-title" style={{ fontSize: "1.25rem", marginBottom: "1rem" }}>
             {petIdStrings.length > 1
-              ? `Appointments for Pet #${selectedPetId}`
+              ? `Appointments for ${petNameMap.get(selectedPetId ?? "") ?? `Pet #${selectedPetId}`}`
               : "Appointments"}
           </h2>
 
@@ -140,45 +165,54 @@ export function OwnerDashboardView({ ownerAddress }: OwnerDashboardViewProps) {
 
           {apptError && <p className="tx-error">Error: {apptError.message}</p>}
 
-          {!apptLoading && !apptError && selectedPetId && unpaidAppointments.length === 0 && (
+          {!apptLoading && !apptError && selectedPetId && appointments.length === 0 && (
             <div className="empty-state">
               <div className="empty-state-icon">📅</div>
-              <p className="empty-state-text">No unpaid appointments</p>
+              <p className="empty-state-text">No appointments</p>
             </div>
           )}
 
-          {!apptLoading && !apptError && unpaidAppointments.length > 0 && (
+          {!apptLoading && !apptError && appointments.length > 0 && (
             <div className="pets-grid">
-              {unpaidAppointments.map((appt) => (
-                <div className="appointment-card" key={appt.id}>
-                  <div className="appointment-card-header">
-                    <p className="appointment-card-date">{formatDate(appt.date)}</p>
+              {appointments.map((appt) => {
+                const isPaid = appt.paidValue > 0;
+                return (
+                  <div className="appointment-card" key={appt.id}>
+                    <div className="appointment-card-header">
+                      <p className="appointment-card-date">{formatDate(appt.date)}</p>
+                    </div>
+                    <div className="appointment-card-body">
+                      <p className="appointment-card-detail">
+                        <span className="appointment-card-detail-label">Time</span>
+                        <span className="appointment-card-value">{appt.time}</span>
+                      </p>
+                      <p className="appointment-card-detail">
+                        <span className="appointment-card-detail-label">Value</span>
+                        <span className="appointment-card-value">{formatDollars(appt.appointmentValue)}</span>
+                      </p>
+                      <p className="appointment-card-detail">
+                        <span className="appointment-card-detail-label">Status</span>
+                        <span
+                          className={`appointment-card-status ${
+                            isPaid ? "appointment-card-status--paid" : "appointment-card-status--pending"
+                          }`}
+                        >
+                          {isPaid ? "Paid" : "Unpaid"}
+                        </span>
+                      </p>
+                      {!isPaid && (
+                        <button
+                          className="btn-primary"
+                          onClick={() => setPayingAppointmentId(appt.id)}
+                          style={{ marginTop: "0.75rem" }}
+                        >
+                          Pay
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="appointment-card-body">
-                    <p className="appointment-card-detail">
-                      <span className="appointment-card-detail-label">Time</span>
-                      <span className="appointment-card-value">{appt.time}</span>
-                    </p>
-                    <p className="appointment-card-detail">
-                      <span className="appointment-card-detail-label">Value</span>
-                      <span className="appointment-card-value">{formatDollars(appt.appointmentValue)}</span>
-                    </p>
-                    <p className="appointment-card-detail">
-                      <span className="appointment-card-detail-label">Status</span>
-                      <span className="appointment-card-status appointment-card-status--pending">
-                        Unpaid
-                      </span>
-                    </p>
-                    <button
-                      className="btn-primary"
-                      onClick={() => setPayingAppointmentId(appt.id)}
-                      style={{ marginTop: "0.75rem" }}
-                    >
-                      Pay
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
